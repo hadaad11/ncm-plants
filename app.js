@@ -169,12 +169,12 @@ const SCREENS = [
   {id: 'users', admin: true, ic: 'shield', t: 'Admin · Users|الأدمن · المستخدمين', sub: 'Add users, passwords and who sees what|إضافة المستخدمين وكلمات السر ومين يشوف إيه', r: rUsers},
 ];
 const hidden = s => (S.settings?.hidden || []).includes(s.id);     // switched off in Admin > Settings
-const can = s => s.admin ? !!S.ring?.admin : (!hidden(s) || S.ring?.admin) &&
+const can = s => s.admin ? !!S.ring?.admin : !hidden(s) &&           // hidden = gone for everyone, admin too
   (['prod', 'mat', 'mix'].includes(s.sec) ? plantsOf(s.sec).length > 0 : !!S.data[s.sec]);
 
 function buildNav() {
   $('nav').innerHTML = SCREENS.filter(can).map(s => (s.admin ? '<div class="sep"></div>' : '') +
-    `<button data-p="${s.id}" class="${s.admin ? 'admin' : ''}" style="${hidden(s) ? 'opacity:.5' : ''}" title="${hidden(s) ? L('Hidden from users|مخفية عن المستخدمين') : ''}"><svg class="i"><use href="#i-${s.ic}"/></svg>${L(s.t)}</button>`).join('') ||
+    `<button data-p="${s.id}" class="${s.admin ? 'admin' : ''}"><svg class="i"><use href="#i-${s.ic}"/></svg>${L(s.t)}</button>`).join('') ||
     `<div class="empty">${L('The admin did not give you any screen yet.|الأدمن لسه ما اداكش أي شاشة.')}</div>`;
   $('nav').querySelectorAll('button').forEach(b => b.onclick = () => { show(b.dataset.p); $('side').classList.remove('open'); });
 }
@@ -501,7 +501,7 @@ function rSettings(v) {
 
   const shown = SCREENS.filter(s => !s.admin);
   const sp = panel(v, '👁️ ' + L('Visible screens|الشاشات الظاهرة'));
-  sp.innerHTML += `<p class="note" style="margin-top:0">${L('Untick a screen to hide it from all users (you still see it, faded). Per-person access is set in Users.|شيل العلامة علشان تخفي الشاشة عن كل المستخدمين (انت هتشوفها باهتة). صلاحية كل شخص بتتظبط من المستخدمين.')}</p>
+  sp.innerHTML += `<p class="note" style="margin-top:0">${L('Untick a screen to remove it from the menu for everyone, you included; tick it again here to bring it back. Per-person access is set in Users.|شيل العلامة علشان الشاشة تختفي من القائمة عند الكل وانت كمان؛ علّم عليها تاني هنا علشان ترجع. صلاحية كل شخص بتتظبط من المستخدمين.')}</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">${shown.map(s => `<label style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:var(--card2);cursor:pointer">
       <input type="checkbox" data-s="${s.id}" style="width:auto" ${hidden(s) ? '' : 'checked'}><svg class="i"><use href="#i-${s.ic}"/></svg>${L(s.t)}</label>`).join('')}</div>
     <div class="tbar" style="margin:14px 0 0"><span class="err" id="sE"></span><span class="grow"></span><button class="btn primary" id="sSave">${L('Save|حفظ')}</button></div>`;
