@@ -1,0 +1,18 @@
+{
+ "v": 1,
+ "users": [
+  {
+   "uid": "564bfd00999119a51d518907bfa46762781cc5b1250efb904c78d8c2f28805d7",
+   "salt": "ZhO9mYtL2W8U/jR6qzOE8w==",
+   "iter": 200000,
+   "pw_box": {
+    "iv": "V2pa5asMoSKFt8wr",
+    "ct": "MMvkUgvDUCwyh4PtSoHTVTN0O6AH7u8uExOr0z5Q5U12aBpXQQZoAGt9Wz1duSf7"
+   },
+   "srv_box": "avm9vxkaNTL4NKxeOZXZymI6UYEfWnBWo55v8gZQ/nEEO9qidLR3rWuaW4LRO1ifvOJaNpcBAR7H75Pls32yIth14RYFho3xEq4Ydi+ybYh6C5SxWPzaEWkkO1Qs7GDIwxXRq9Xzs0dUuXxOtdkNS6v8OUNrftAH2iofqo3zE0oX79tSJbeJxKXDYHu21DBO1Jr0fhxlqxcs6hGk44gAsrGjG0dKfc1xqlco018siv+5nVe9ZuWItNs6at8nMGOvSR1mSpaSUlBpl7YEHWIzBdi0FiUIOhV7lhs/MTV8EwdoDaPXrQuXwDgrsU59WE+WbuLcXl7zStmpBaokreMdNg==",
+   "admin": true,
+   "sections": [],
+   "plants": []
+  }
+ ]
+}
