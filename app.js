@@ -92,6 +92,7 @@ async function refresh(force) {
   if (!box) throw new Error(L('Your account is not active yet (it is ready within 5 minutes of being created) or it was stopped by the admin.|حسابك لسه ما اتفعّلش (بيجهز خلال 5 دقايق من إنشائه) أو الأدمن وقفه.'));
   S.ring = await openJson(S.k, box);
   S.meta = meta;
+  try { S.settings = await getJson(LOCAL ? 'settings.json' : RAW + 'main/settings.json'); } catch (e) { S.settings = {hidden: []}; }
   const keys = S.ring.keys || {}, data = {};
   await Promise.all(Object.entries(keys).map(async ([sid, k]) => {
     if (!meta.files[sid]) return;
@@ -162,11 +163,13 @@ const SCREENS = [
   {id: 'monitor', sec: 'monitor', ic: 'pulse', t: 'Monitor|المونيتور', sub: 'Server and network|حالة السيرفر والشبكة', r: rMonitor},
   {id: 'users', admin: true, ic: 'shield', t: 'Admin · Users|الأدمن · المستخدمين', sub: 'Add users, passwords and who sees what|إضافة المستخدمين وكلمات السر ومين يشوف إيه', r: rUsers},
 ];
-const can = s => s.admin ? !!S.ring?.admin : (['prod', 'mat', 'mix'].includes(s.sec) ? plantsOf(s.sec).length > 0 : !!S.data[s.sec]);
+const hidden = s => (S.settings?.hidden || []).includes(s.id);     // switched off in Admin > Settings
+const can = s => s.admin ? !!S.ring?.admin : (!hidden(s) || S.ring?.admin) &&
+  (['prod', 'mat', 'mix'].includes(s.sec) ? plantsOf(s.sec).length > 0 : !!S.data[s.sec]);
 
 function buildNav() {
   $('nav').innerHTML = SCREENS.filter(can).map(s => (s.admin ? '<div class="sep"></div>' : '') +
-    `<button data-p="${s.id}" class="${s.admin ? 'admin' : ''}"><svg class="i"><use href="#i-${s.ic}"/></svg>${L(s.t)}</button>`).join('') ||
+    `<button data-p="${s.id}" class="${s.admin ? 'admin' : ''}" style="${hidden(s) ? 'opacity:.5' : ''}" title="${hidden(s) ? L('Hidden from users|مخفية عن المستخدمين') : ''}"><svg class="i"><use href="#i-${s.ic}"/></svg>${L(s.t)}</button>`).join('') ||
     `<div class="empty">${L('The admin did not give you any screen yet.|الأدمن لسه ما اداكش أي شاشة.')}</div>`;
   $('nav').querySelectorAll('button').forEach(b => b.onclick = () => { show(b.dataset.p); $('side').classList.remove('open'); });
 }
@@ -452,6 +455,36 @@ async function saveUsers(msg) {
   GH.sha = f.content.sha;
 }
 const pending = {};                                  // names of users added in this session (the server lists them within 5 min)
+let admTab = 'users';
+
+/* Admin > Settings: the program's plant connections (read-only: they are changed in the program's
+   Settings, the site follows within 5 minutes) and which screens the users see (settings.json). */
+function rSettings(v) {
+  const cfg = S.ring.plants_cfg || [];
+  const pp = panel(v, '🏭 ' + L('Plants (network connections)|المحطات (اتصالات الشبكة)'));
+  pp.innerHTML += `<div class="tw"><table><thead><tr><th>${L('Label|الاسم')}</th><th>Host / IP</th><th>Port</th><th>DB path</th><th>${L('Status|الحالة')}</th></tr></thead><tbody>
+    ${cfg.map(p => `<tr><td><b>${esc(p.label)}</b></td><td>${esc(p.host) || '—'}</td><td>${esc(p.port)}</td><td><small>${esc(p.path)}</small></td>
+      <td><span class="pill ${p.up ? 'ok' : 'off'}">${p.up ? L('Answering|شغالة') : L('Not reachable|مش متاحة')}</span></td></tr>`).join('') || `<tr><td colspan="5" class="empty">${L('Shown after the next data update (5 min)|بيظهر بعد التحديث الجاي (5 دقايق)')}</td></tr>`}</tbody></table></div>
+    <p class="note">${L('To add a plant or change an IP, use Settings in the NCM PLANTS program on the office network; the site follows it within 5 minutes. It is not editable from the internet on purpose: these connections reach the plant databases.|لإضافة محطة أو تغيير IP استخدم الإعدادات في برنامج NCM PLANTS على شبكة المكتب؛ الموقع بيتبعه خلال 5 دقايق. مقفولة من الإنترنت عن قصد لأنها بتوصل لقواعد بيانات المحطات.')}</p>`;
+
+  const shown = SCREENS.filter(s => !s.admin);
+  const sp = panel(v, '👁️ ' + L('Visible screens|الشاشات الظاهرة'));
+  sp.innerHTML += `<p class="note" style="margin-top:0">${L('Untick a screen to hide it from all users (you still see it, faded). Per-person access is set in Users.|شيل العلامة علشان تخفي الشاشة عن كل المستخدمين (انت هتشوفها باهتة). صلاحية كل شخص بتتظبط من المستخدمين.')}</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">${shown.map(s => `<label style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:var(--card2);cursor:pointer">
+      <input type="checkbox" data-s="${s.id}" style="width:auto" ${hidden(s) ? '' : 'checked'}><svg class="i"><use href="#i-${s.ic}"/></svg>${L(s.t)}</label>`).join('')}</div>
+    <div class="tbar" style="margin:14px 0 0"><span class="err" id="sE"></span><span class="grow"></span><button class="btn primary" id="sSave">${L('Save|حفظ')}</button></div>`;
+  $('sSave').onclick = async () => {
+    const hid = [...sp.querySelectorAll('[data-s]')].filter(c => !c.checked).map(c => c.dataset.s);
+    $('sE').textContent = ''; $('sSave').disabled = true;
+    try {
+      let sha; try { sha = (await gh('/contents/settings.json?ref=main')).sha; } catch (e) { if (!/404/.test(e.message)) throw e; }
+      const body = {...(S.settings || {}), hidden: hid};
+      await gh('/contents/settings.json', {method: 'PUT', body: JSON.stringify({message: 'settings: visible screens', branch: 'main', ...(sha ? {sha} : {}),
+        content: b64(enc.encode(JSON.stringify(body, null, 1)))})});
+      S.settings = body; buildNav(); show('users', true); toast(L('Saved ✓ — users see it within 5 minutes|اتحفظ ✓ — بيوصل للمستخدمين خلال 5 دقايق'));
+    } catch (e) { $('sE').textContent = e.message; } finally { $('sSave').disabled = false; }
+  };
+}
 
 async function rUsers(v) {
   if (!await ghToken()) {
@@ -471,6 +504,10 @@ async function rUsers(v) {
     };
     return;
   }
+  const tb = panel(v);
+  tb.innerHTML = `<div class="tabs" style="margin:0">${[['users', '👤 Users|👤 المستخدمين'], ['settings', '⚙️ Settings|⚙️ الإعدادات']].map(([k, t]) => `<button data-k="${k}" class="${admTab === k ? 'on' : ''}">${L(t)}</button>`).join('')}</div>`;
+  tb.onclick = e => { if (e.target.dataset.k) { admTab = e.target.dataset.k; show('users', true); } };
+  if (admTab === 'settings') return rSettings(v);
   const p = panel(v); p.innerHTML = '<div class="spin"></div>';
   try { await loadUsers(); } catch (e) { p.innerHTML = `<div class="err">${esc(e.message)}</div><button class="btn" onclick="localStorage.removeItem('ncmGh:'+S.uid);GH.token='';show('users')">${L('Enter a new GitHub key|حط مفتاح GitHub جديد')}</button>`; return; }
   const dir = Object.fromEntries((S.ring.directory || []).map(d => [d.uid, d]));
