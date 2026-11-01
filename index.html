@@ -3,132 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
 <title>NCM PLANTS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-:root{
-  --blue:#0067a8; --blue2:#2f8fd8; --green:#1ba352; --green2:#4cc77d; --gray:#7d7d7d;
-  --ink:#0f2235; --ink2:#4a5b6d; --ink3:#7a8a9b;
-  --card:rgba(255,255,255,.55); --card2:rgba(255,255,255,.38); --line:rgba(255,255,255,.7);
-  --shadow:0 10px 30px rgba(20,50,90,.12); --blur:blur(20px) saturate(170%);
-  --bg:#c9d8ea; --danger:#e0533d; --warn:#e3a21a;
-}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --ink:#eaf2fb; --ink2:#b5c4d4; --ink3:#8496a9; --card:rgba(22,34,52,.55); --card2:rgba(22,34,52,.38);
-  --line:rgba(255,255,255,.12); --shadow:0 10px 30px rgba(0,0,0,.35); --bg:#0b1624;}}
-:root[data-theme="dark"]{--ink:#eaf2fb; --ink2:#b5c4d4; --ink3:#8496a9; --card:rgba(22,34,52,.55); --card2:rgba(22,34,52,.38);
-  --line:rgba(255,255,255,.12); --shadow:0 10px 30px rgba(0,0,0,.35); --bg:#0b1624;}
-*{box-sizing:border-box}
-html{background:var(--bg)}
-body{margin:0;font-family:Cairo,system-ui,sans-serif;color:var(--ink);background:transparent;min-height:100vh}
-body::before{content:"";position:fixed;inset:-10%;z-index:-1;
-  background:radial-gradient(40% 45% at 15% 20%,rgba(0,103,168,.75),transparent 70%),
-    radial-gradient(35% 40% at 85% 25%,rgba(27,163,82,.6),transparent 70%),
-    radial-gradient(45% 45% at 70% 90%,rgba(47,143,216,.6),transparent 70%),
-    radial-gradient(35% 35% at 20% 85%,rgba(125,125,125,.45),transparent 70%);
-  filter:blur(30px);animation:drift 28s ease-in-out infinite alternate}
-@keyframes drift{to{transform:translate(3%,-2%) scale(1.06)}}
-@media (prefers-reduced-motion:reduce){body::before{animation:none}}
-.glass{background:var(--card);border:1px solid var(--line);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);box-shadow:var(--shadow);border-radius:22px}
-button,input,select{font:inherit;color:inherit}
-.btn{border:1px solid var(--line);background:var(--card2);padding:10px 16px;border-radius:12px;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:8px;justify-content:center}
-.btn:hover{transform:translateY(-1px);background:var(--card)}
-.btn.primary{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border:0;box-shadow:0 6px 18px rgba(0,103,168,.35)}
-.btn.green{background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;border:0}
-.btn.sm{padding:6px 10px;font-size:13px;border-radius:9px}
-input,select{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;outline:none;width:100%}
-input:focus,select:focus{border-color:var(--blue2);box-shadow:0 0 0 3px rgba(47,143,216,.2)}
-svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
-
-/* login */
-#login{min-height:100vh;display:grid;place-items:center;padding:16px}
-.lbox{width:min(420px,100%);padding:34px 28px;text-align:center}
-.lbox img{width:220px;max-width:80%;background:#fff;border-radius:14px;padding:10px 14px}
-.lbox h1{font-size:22px;margin:18px 0 4px}.lbox p{color:var(--ink2);margin:0 0 22px;font-size:14px}
-.lbox .btn{width:100%;margin-top:10px;padding:12px}
-.hint{font-size:12px;color:var(--ink3);margin-top:14px}
-
-/* app */
-#app{display:none;grid-template-columns:250px 1fr;gap:18px;padding:18px;min-height:100vh}
-.side{padding:20px 14px;display:flex;flex-direction:column;gap:6px;position:sticky;top:18px;height:calc(100vh - 36px)}
-.side .logo{background:#fff;border-radius:14px;padding:10px;margin-bottom:14px;text-align:center}.side .logo img{width:100%;max-width:190px}
-.nav button{width:100%;border:1px solid transparent;background:transparent;padding:11px 14px;border-radius:14px;display:flex;align-items:center;gap:12px;cursor:pointer;color:var(--ink2);font-weight:600;transition:.2s;text-align:start}
-.nav button:hover{background:var(--card2);color:var(--ink)}
-.nav button.on{background:linear-gradient(135deg,rgba(0,103,168,.9),rgba(47,143,216,.85));color:#fff;box-shadow:0 6px 18px rgba(0,103,168,.3)}
-.nav .sep{height:1px;background:var(--line);margin:8px 6px}
-.me{margin-top:auto;display:flex;align-items:center;gap:10px;padding:12px 6px;border-top:1px solid var(--line)}
-.av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;background:linear-gradient(135deg,var(--blue),var(--green));flex:none}
-.me b{display:block;font-size:14px}.me small{color:var(--ink3);font-size:12px}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block}
-.main{display:flex;flex-direction:column;gap:18px;min-width:0}
-.top{padding:18px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.top h2{margin:0;font-size:24px}.top p{margin:0;color:var(--ink2);font-size:14px}
-.top .grow{flex:1}
-.search{position:relative;width:260px}.search input{padding-inline-start:38px}.search svg{position:absolute;inset-inline-start:12px;top:11px;color:var(--ink3)}
-.iconbtn{width:42px;height:42px;border-radius:12px;padding:0;position:relative}
-.badge{position:absolute;top:8px;inset-inline-end:9px;width:8px;height:8px;border-radius:50%;background:var(--danger)}
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
-.kpi{padding:18px 20px;cursor:pointer;transition:.25s}
-.kpi:hover{transform:translateY(-3px)}
-.kpi .h{display:flex;align-items:center;gap:10px;color:var(--ink2);font-weight:600}
-.kpi .ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:#fff}
-.kpi .v{font-size:34px;font-weight:800;margin:8px 0 2px;direction:ltr;text-align:start}
-.kpi .d{font-size:13px;color:var(--green);font-weight:600}.kpi .d.dn{color:var(--danger)}
-.grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:18px}
-.panel{padding:20px 22px;min-width:0}
-.panel h3{margin:0 0 14px;font-size:18px;display:flex;align-items:center;gap:10px}
-.panel h3 .tag{margin-inline-start:auto;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;background:rgba(47,143,216,.15);color:var(--blue2)}
-.seg{display:inline-flex;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:3px;margin-inline-start:auto}
-.seg button{border:0;background:transparent;padding:5px 12px;border-radius:9px;cursor:pointer;font-size:13px;color:var(--ink2)}
-.seg button.on{background:var(--card);color:var(--ink);font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.chartbox{height:280px;position:relative}
-.act{list-style:none;margin:0;padding:0}
-.act li{display:flex;gap:12px;padding:10px 4px;border-bottom:1px solid var(--line)}
-.act li:last-child{border:0}
-.act .dot{margin-top:8px;flex:none}
-.act b{font-size:14px}.act small{display:block;color:var(--ink3);font-size:12px}
-.sys{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;font-size:13px}
-.sys span{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:var(--card2)}
-.plants{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
-.pl{padding:16px;text-align:center;cursor:pointer;transition:.25s}.pl:hover{transform:translateY(-3px)}
-.pl .n{font-weight:800;font-size:18px}.pl .m{font-size:24px;font-weight:800;margin:6px 0;direction:ltr}
-.pl small{color:var(--ink3)}
-.ring{--p:60;width:64px;height:64px;border-radius:50%;margin:8px auto;display:grid;place-items:center;
-  background:conic-gradient(var(--green) calc(var(--p)*1%),rgba(125,125,125,.2) 0)}
-.ring::after{content:attr(data-t);width:48px;height:48px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-size:12px;font-weight:700}
-table{width:100%;border-collapse:collapse;font-size:14px}
-th{text-align:start;font-size:12px;color:var(--ink3);font-weight:700;padding:10px;border-bottom:1px solid var(--line)}
-td{padding:10px;border-bottom:1px solid var(--line)}
-tr:hover td{background:rgba(255,255,255,.12)}
-.tw{overflow:auto;max-height:520px}
-.pill{font-size:12px;padding:3px 10px;border-radius:20px;font-weight:700;display:inline-block}
-.pill.ok{background:rgba(27,163,82,.15);color:var(--green)}.pill.wait{background:rgba(227,162,26,.18);color:#b77b00}.pill.off{background:rgba(224,83,61,.15);color:var(--danger)}
-.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}.filters>*{width:auto;min-width:140px}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid var(--line);background:var(--card2);cursor:pointer;user-select:none;transition:.15s}
-.chip.on{background:var(--blue);color:#fff;border-color:transparent}
-.foot{text-align:end;font-size:12px;color:var(--ink3);padding:0 6px}
-.page{display:none;flex-direction:column;gap:18px}.page.on{display:flex;animation:in .35s ease}
-@keyframes in{from{opacity:0;transform:translateY(8px)}}
-.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);padding:12px 20px;transition:.3s;z-index:9}
-.toast.show{transform:translateX(-50%)}
-.burger{display:none}
-.demo{position:fixed;top:10px;left:10px;font-size:11px;padding:4px 10px;border-radius:20px;background:var(--warn);color:#fff;z-index:9}
-@media (max-width:1100px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.plants{grid-template-columns:repeat(3,1fr)}}
-@media (max-width:820px){
-  #app{grid-template-columns:1fr;padding:12px 16px}
-  .side{position:fixed;inset-block:0;inset-inline-start:0;width:260px;height:100vh;z-index:5;border-radius:0;transform:translateX(110%);transition:.3s}
-  [dir="ltr"] .side{transform:translateX(-110%)}
-  .side.open{transform:none}
-  .burger{display:inline-flex}.search{width:100%;order:5}
-  .plants{grid-template-columns:repeat(2,1fr)}.kpi .v{font-size:28px}
-}
-</style>
 </head>
 <body>
-<div class="demo" id="demo">نسخة تجريبية — بيانات وهمية</div>
 <svg width="0" height="0" style="position:absolute"><defs>
 <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
 <symbol id="i-truck" viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></symbol>
@@ -140,22 +22,32 @@ tr:hover td{background:rgba(255,255,255,.12)}
 <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z M14 3v4h4M9 12h6M9 16h6"/></symbol>
 <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
 <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
-<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0"/></symbol>
 <symbol id="i-out" viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></symbol>
 <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
 <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
 <symbol id="i-cube" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5"/></symbol>
-<symbol id="i-google" viewBox="0 0 24 24"><path d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z" fill="#4285F4" stroke="none"/><path d="M12 22c2.7 0 5-.9 6.6-2.5l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z" fill="#34A853" stroke="none"/><path d="M6.4 13.9a6 6 0 0 1 0-3.8V7.5H3.1a10 10 0 0 0 0 9z" fill="#FBBC05" stroke="none"/><path d="M12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.5l3.3 2.6C7.2 7.8 9.4 6 12 6z" fill="#EA4335" stroke="none"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="M9 14l-4-4 4-4M5 10h10a4 4 0 0 1 0 8h-3"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+<symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18M5 7h14M5 7l-3 7a3 3 0 0 0 6 0zM19 7l-3 7a3 3 0 0 0 6 0zM8 21h8"/></symbol>
+<symbol id="i-silo" viewBox="0 0 24 24"><path d="M6 21V8a6 4 0 0 1 12 0v13M6 12h12M6 16h12M4 21h16"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></symbol>
 </defs></svg>
 
 <!-- ============ LOGIN ============ -->
-<section id="login" style="display:none">
+<section id="login">
   <div class="glass lbox">
     <img src="ncm-logo.png" alt="NCM">
-    <h1 data-ar="أهلاً بيك في NCM PLANTS" data-en="Welcome to NCM PLANTS"></h1>
-    <p data-ar="سجّل الدخول بحساب Gmail علشان تشوف بيانات المحطات" data-en="Sign in with your Gmail account to see the plants' data"></p>
-    <button class="btn primary" onclick="fakeLogin('google')" style="background:#fff;color:#1f1f1f;box-shadow:0 6px 18px rgba(0,0,0,.12)"><svg class="i"><use href="#i-google"/></svg><span data-ar="الدخول بحساب Google" data-en="Sign in with Google"></span></button>
-    <div class="hint" data-ar="الحسابات الجديدة بتستنى موافقة الأدمن" data-en="New accounts wait for admin approval"></div>
+    <h1>NCM PLANTS</h1>
+    <p data-t="Sign in with the username and password you got from the admin|سجّل الدخول باسم المستخدم وكلمة السر اللي أخدتهم من الأدمن"></p>
+    <form id="lf" autocomplete="on">
+      <label for="lu" data-t="Username|اسم المستخدم"></label>
+      <input id="lu" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+      <label for="lp" data-t="Password|كلمة السر"></label>
+      <input id="lp" type="password" autocomplete="current-password" required>
+      <div class="err" id="lerr"></div>
+      <button class="btn primary" id="lbtn" type="submit" data-t="Sign in|دخول"></button>
+    </form>
+    <div class="hint"><button class="btn sm" type="button" onclick="toggleLang()" id="langBtn0">عربي</button></div>
   </div>
 </section>
 
@@ -164,182 +56,25 @@ tr:hover td{background:rgba(255,255,255,.12)}
   <aside class="side glass" id="side">
     <div class="logo"><img src="ncm-logo.png" alt="NCM"></div>
     <nav class="nav" id="nav"></nav>
-    <div class="me"><div class="av">N</div><div><b>NCM PLANTS</b><small><span class="dot"></span> <span data-ar="البيانات متصلة" data-en="Data online"></span></small></div></div>
-    
+    <div class="me"><div class="av" id="meAv">N</div><div><b id="meName"></b><small><span class="dot" id="meDot"></span> <span id="meSub"></span></small></div></div>
+    <button class="btn" onclick="logout()"><svg class="i"><use href="#i-out"/></svg><span data-t="Log out|تسجيل خروج"></span></button>
   </aside>
 
   <main class="main">
     <header class="top glass">
-      <button class="btn iconbtn burger" onclick="side.classList.toggle('open')"><svg class="i"><use href="#i-menu"/></svg></button>
+      <button class="btn iconbtn burger" onclick="side.classList.toggle('open')" aria-label="Menu"><svg class="i"><use href="#i-menu"/></svg></button>
       <div class="grow"><h2 id="pTitle"></h2><p id="pSub"></p></div>
-      <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="q" data-ph-ar="ابحث عن عميل، رحلة، محطة..." data-ph-en="Search customer, trip, plant..."></div>
-      <button class="btn iconbtn" onclick="toast(T('3 تنبيهات جديدة','3 new alerts'))"><svg class="i"><use href="#i-bell"/></svg><span class="badge"></span></button>
-      <button class="btn iconbtn" onclick="toggleTheme()"><svg class="i"><use href="#i-moon"/></svg></button>
-      <button class="btn sm" onclick="toggleLang()" id="langBtn">EN</button>
+      <button class="btn iconbtn" onclick="refresh(true)" title="Refresh" aria-label="Refresh"><svg class="i"><use href="#i-refresh"/></svg></button>
+      <button class="btn iconbtn" onclick="toggleTheme()" title="Dark / light" aria-label="Theme"><svg class="i"><use href="#i-moon"/></svg></button>
+      <button class="btn sm" onclick="toggleLang()" id="langBtn">عربي</button>
     </header>
-
-    <!-- dashboard -->
-    <section class="page on" id="pg-dash">
-      <div class="kpis" id="kpis"></div>
-      <div class="grid2">
-        <div class="panel glass">
-          <h3><span data-ar="الإنتاج اليومي (م³)" data-en="Daily production (m³)"></span>
-            <div class="seg" id="rng"><button data-d="7" class="on">7</button><button data-d="14">14</button><button data-d="30">30</button></div></h3>
-          <div class="chartbox"><canvas id="cProd"></canvas></div>
-        </div>
-        <div class="panel glass">
-          <h3 data-ar="آخر النشاط" data-en="Latest activity"></h3>
-          <ul class="act" id="act"></ul>
-          <h3 style="margin-top:14px;font-size:15px" data-ar="حالة النظام" data-en="System status"></h3>
-          <div class="sys" id="sys"></div>
-        </div>
-      </div>
-      <div class="plants" id="plantCards"></div>
-    </section>
-
-    <!-- production -->
-    <section class="page" id="pg-prod">
-      <div class="panel glass">
-        <div class="filters">
-          <input type="date" id="fFrom"><input type="date" id="fTo">
-          <select id="fPlant"><option value="" data-ar="كل المحطات" data-en="All plants"></option></select>
-          <button class="btn primary" onclick="renderTrips()" data-ar="عرض" data-en="Show"></button>
-          <button class="btn" onclick="toast(T('هيتعمل ملف Excel','Excel export'))">Excel</button>
-        </div>
-        <div class="tw"><table><thead><tr><th data-ar="الوقت" data-en="Time"></th><th data-ar="المحطة" data-en="Plant"></th><th data-ar="العميل" data-en="Customer"></th><th data-ar="الخلطة" data-en="Mix"></th><th>m³</th><th data-ar="العربية" data-en="Truck"></th></tr></thead><tbody id="trips"></tbody></table></div>
-      </div>
-    </section>
-
-    <!-- plants -->
-    <section class="page" id="pg-plants"><div class="panel glass"><h3 data-ar="مقارنة المحطات" data-en="Plants comparison"></h3><div class="chartbox"><canvas id="cPlants"></canvas></div></div></section>
-
-    <!-- consumption -->
-    <section class="page" id="pg-cons"><div class="panel glass"><h3 data-ar="Mix Theory مقابل الفعلي" data-en="Mix Theory vs actual"></h3><div class="chartbox"><canvas id="cCons"></canvas></div></div></section>
-
-    <!-- generic pages -->
-    <section class="page" id="pg-maint"><div class="panel glass"><h3 data-ar="الصيانة" data-en="Maintenance"></h3><p style="color:var(--ink2)" data-ar="هتتربط بشيت الصيانة الحالي." data-en="Will be linked to the current maintenance sheet."></p></div></section>
-    <section class="page" id="pg-man"><div class="panel glass"><h3 data-ar="المانباور" data-en="Manpower"></h3><p style="color:var(--ink2)" data-ar="هتتربط بشيت المانباور الحالي." data-en="Will be linked to the current manpower sheet."></p></div></section>
-    <section class="page" id="pg-mon"><div class="panel glass"><h3 data-ar="المونيتور" data-en="Monitor"></h3><div class="sys" id="sys2" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))"></div></div></section>
-
-    <!-- admin -->
-    <section class="page" id="pg-admin">
-      <div class="kpis" id="admK"></div>
-      <div class="panel glass">
-        <h3><span data-ar="المستخدمين والصلاحيات" data-en="Users & permissions"></span><span class="tag" data-ar="اضغط على أي صلاحية لتشغيلها/قفلها" data-en="Click a permission to toggle it"></span></h3>
-        <div class="tw"><table><thead><tr><th data-ar="الشخص" data-en="Person"></th><th data-ar="الحالة" data-en="Status"></th><th data-ar="الأقسام المسموحة" data-en="Allowed sections"></th><th data-ar="المحطات" data-en="Plants"></th><th></th></tr></thead><tbody id="users"></tbody></table></div>
-      </div>
-    </section>
-
+    <section id="view" class="page on"></section>
     <div class="foot" id="foot"></div>
   </main>
 </div>
+
+<div class="modal" id="modal"><div class="box glass" id="mbox"></div></div>
 <div class="toast glass" id="toast"></div>
-
-<script>
-let LANG='en';
-const T=(a,e)=>LANG==='ar'?a:e;
-const PLANTS=['L1','L2','V3','V4','V5'];
-const SECTIONS=[
- {id:'dash',ic:'grid',ar:'الرئيسية',en:'Dashboard',sub:['نظرة سريعة على كل المحطات','Overview of all plants']},
- {id:'prod',ic:'truck',ar:'الإنتاج',en:'Production',sub:['كل الرحلات بالتفصيل','Every trip in detail']},
- {id:'plants',ic:'factory',ar:'المحطات',en:'Plants',sub:['مقارنة إنتاج المحطات','Compare the plants']},
- {id:'cons',ic:'flask',ar:'الاستهلاك',en:'Consumption',sub:['النظري مقابل الفعلي','Theory vs actual']},
- {id:'maint',ic:'wrench',ar:'الصيانة',en:'Maintenance',sub:['أوامر وحالة الصيانة','Maintenance orders']},
- {id:'man',ic:'users',ar:'المانباور',en:'Manpower',sub:['العمالة والورديات','Staff and shifts']},
- {id:'mon',ic:'pulse',ar:'المونيتور',en:'Monitor',sub:['حالة السيرفر والشبكة','Server and network']},
- 
-];
-/* ---------- sample data (replaced by Firebase later) ---------- */
-const rnd=(a,b)=>Math.round(a+Math.random()*(b-a));
-const days=[...Array(30)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-29+i);return d});
-const prodByDay=days.map(()=>PLANTS.map(p=>p==='L1'||p==='V5'?rnd(0,120):rnd(150,700)));
-const CUST=['Customer A','Customer B','Customer C','Customer D','Customer E','Customer F'];
-const MIX=['C40','C35','C30','C50 HPC','Lean'];
-const trips=[...Array(80)].map((_,i)=>({t:new Date(Date.now()-i*9*60000),p:PLANTS[rnd(0,4)],c:CUST[rnd(0,5)],m:MIX[rnd(0,4)],q:[6,8,9,10,12][rnd(0,4)],tr:'TR-'+rnd(101,160)}));
-let USERS=[{n:'Admin',id:'',by:'google',st:'ok',admin:true,s:SECTIONS.map(s=>s.id),p:PLANTS}];
-const fmt=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:1});
-
-/* ---------- i18n ---------- */
-function applyLang(){
-  document.documentElement.lang=LANG;document.documentElement.dir=LANG==='ar'?'rtl':'ltr';
-  document.querySelectorAll('[data-ar]').forEach(e=>e.textContent=e.dataset[LANG]);
-  document.querySelectorAll('[data-ph-ar]').forEach(e=>e.placeholder=LANG==='ar'?e.dataset.phAr:e.dataset.phEn);
-  langBtn.textContent=LANG==='ar'?'EN':'ع';demo.textContent=T('نسخة تجريبية — بيانات وهمية','Demo — sample data');
-  buildNav();go(cur,true);
-}
-function toggleLang(){LANG=LANG==='ar'?'en':'ar';try{localStorage.ncmLang=LANG}catch(e){}applyLang()}
-function toggleTheme(){const r=document.documentElement;const d=r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme:dark)').matches);r.dataset.theme=d?'light':'dark';Object.values(charts).forEach(c=>c.update())}
-function toast(m){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>toastEl.classList.remove('show'),2200)}
-const toastEl=document.getElementById('toast'),side=document.getElementById('side');
-
-/* ---------- login (demo) ---------- */
-function fakeLogin(){login.style.display='none';app.style.display='grid';go('dash')}
-function logout(){app.style.display='none';login.style.display='grid'}
-
-/* ---------- nav ---------- */
-let cur='dash';const me=USERS[0];
-function buildNav(){nav.innerHTML=SECTIONS.filter(s=>me.s.includes(s.id)).map(s=>(s.admin?'<div class="sep"></div>':'')+
-  `<button data-p="${s.id}" class="${s.id===cur?'on':''}"><svg class="i"><use href="#i-${s.ic}"/></svg>${s[LANG]}</button>`).join('');
-  nav.querySelectorAll('button').forEach(b=>b.onclick=()=>{go(b.dataset.p);side.classList.remove('open')})}
-function go(id,keep){cur=id;const s=SECTIONS.find(x=>x.id===id);
-  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id==='pg-'+id));
-  nav.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.p===id));
-  pTitle.textContent=s[LANG];pSub.textContent=s.sub[LANG==='ar'?0:1];
-  ({dash:renderDash,prod:renderTrips,plants:renderPlants,cons:renderCons,mon:renderMon,admin:renderAdmin}[id]||(()=>{}))();
-  foot.textContent=T('آخر تحديث للبيانات: من دقيقة · NCM PLANTS v3','Data updated 1 min ago · NCM PLANTS v3')}
-
-/* ---------- charts ---------- */
-const charts={};
-const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-function chart(id,cfg){charts[id]&&charts[id].destroy();Chart.defaults.font.family='Cairo';Chart.defaults.color=css('--ink2');
-  cfg.options=Object.assign({responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-   plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8}}},
-   scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(125,125,125,.15)'},beginAtZero:true}}},cfg.options||{});
-  charts[id]=new Chart(document.getElementById(id),cfg)}
-const PC=['#0067a8','#1ba352','#2f8fd8','#7d7d7d','#4cc77d'];
-
-/* ---------- pages ---------- */
-let span=7;
-function renderDash(){
-  const tod=prodByDay[29],yes=prodByDay[28],sum=a=>a.reduce((x,y)=>x+y,0);
-  const mtd=prodByDay.reduce((a,d)=>a+sum(d),0),dlt=((sum(tod)-sum(yes))/sum(yes)*100).toFixed(1);
-  const k=[[T('إنتاج النهارده','Today'),fmt(sum(tod))+' m³',dlt,'cube','var(--blue)','prod'],
-   [T('رحلات النهارده','Trips today'),rnd(120,180),4.2,'truck','var(--green)','prod'],
-   [T('إنتاج الشهر','Month to date'),fmt(mtd),6.8,'factory','#2f8fd8','plants'],
-   [T('محطات شغالة','Plants online'),'5 / 5',0,'pulse','#7d7d7d','mon']];
-  kpis.innerHTML=k.map(([l,v,d,ic,c,g])=>`<div class="kpi glass" onclick="go('${g}')"><div class="h"><span class="ic" style="background:${c}"><svg class="i"><use href="#i-${ic}"/></svg></span>${l}</div><div class="v">${v}</div><div class="d ${d<0?'dn':''}">${d?(d>0?'↗ +':'↘ ')+d+'% '+T('عن امبارح','vs yesterday'):T('كله تمام','all good')}</div></div>`).join('');
-  const ds=prodByDay.slice(-span),lb=days.slice(-span).map(d=>d.getDate()+'/'+(d.getMonth()+1));
-  chart('cProd',{type:'bar',data:{labels:lb,datasets:PLANTS.map((p,i)=>({label:p,data:ds.map(d=>d[i]),backgroundColor:PC[i],borderRadius:6,stack:'s'}))},options:{scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'rgba(125,125,125,.15)'}}}}});
-  act.innerHTML=trips.slice(0,4).map((t,i)=>`<li><span class="dot" style="background:${PC[i]}"></span><div><b>${T('رحلة','Trip')} ${t.q} m³ — ${t.p}</b><small>${t.c} · ${t.m} · ${T('من','')} ${(i*9)||1} ${T('دقيقة','min ago')}</small></div></li>`).join('');
-  sys.innerHTML=[['السيرفر','Server'],['Tailscale','Tailscale'],['قواعد البيانات 5/5','Databases 5/5'],['الإيميل اليومي','Daily mail']].map(x=>`<span><i class="dot"></i>${T(...x)}</span>`).join('');
-  plantCards.innerHTML=PLANTS.map((p,i)=>{const pc=Math.min(100,Math.round(tod[i]/7));return `<div class="pl glass" onclick="fPlant.value='${p}';go('prod')"><div class="n">${p}</div><div class="ring" style="--p:${pc}" data-t="${pc}%"></div><div class="m">${fmt(tod[i])}</div><small>m³ ${T('النهارده','today')}</small></div>`}).join('');
-}
-rng.onclick=e=>{if(!e.target.dataset.d)return;span=+e.target.dataset.d;rng.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===e.target));renderDash()};
-function renderTrips(){const p=fPlant.value,q=(document.getElementById('q').value||'').toLowerCase();
-  trips_.innerHTML=trips.filter(t=>(!p||t.p===p)&&(!q||(t.c+t.p+t.m+t.tr).toLowerCase().includes(q))).map(t=>`<tr><td>${t.t.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</td><td><b>${t.p}</b></td><td>${t.c}</td><td>${t.m}</td><td>${t.q}</td><td>${t.tr}</td></tr>`).join('')}
-const trips_=document.getElementById('trips');
-function renderPlants(){chart('cPlants',{type:'line',data:{labels:days.map(d=>d.getDate()),datasets:PLANTS.map((p,i)=>({label:p,data:prodByDay.map(d=>d[i]),borderColor:PC[i],backgroundColor:PC[i]+'22',fill:true,tension:.35,pointRadius:0}))}})}
-function renderCons(){const m=['Cement','Sand','Gravel','Water','Admix'];chart('cCons',{type:'bar',data:{labels:m,datasets:[{label:'Theory',data:m.map(()=>rnd(80,120)),backgroundColor:'#0067a8',borderRadius:6},{label:T('الفعلي','Actual'),data:m.map(()=>rnd(78,125)),backgroundColor:'#1ba352',borderRadius:6}]}})}
-function renderMon(){sys2.innerHTML=['NCM SERVER','NCM PLANTS','Portal','Tailscale','Internet',...PLANTS.map(p=>p+' DB')].map(x=>`<span><i class="dot"></i>${x}</span>`).join('')}
-function renderAdmin(){
-  const c=s=>USERS.filter(u=>u.st===s).length;
-  admK.innerHTML=[[T('كل المستخدمين','All users'),USERS.length,'users','var(--blue)'],[T('مفعّلين','Active'),c('ok'),'shield','var(--green)'],[T('مستنيين موافقة','Waiting'),c('wait'),'bell','var(--warn)'],[T('موقوفين','Blocked'),c('off'),'out','var(--danger)']]
-    .map(([l,v,ic,col])=>`<div class="kpi glass"><div class="h"><span class="ic" style="background:${col}"><svg class="i"><use href="#i-${ic}"/></svg></span>${l}</div><div class="v">${v}</div></div>`).join('');
-  users.innerHTML=USERS.map((u,i)=>`<tr><td><div style="display:flex;gap:10px;align-items:center"><div class="av" style="width:34px;height:34px;font-size:14px">${u.n[0]==='—'?'?':u.n[0]}</div><div><b>${u.n}</b>${u.admin?' <span class="pill ok">Admin</span>':''}<small style="display:block;color:var(--ink3);direction:ltr;text-align:start">${u.id}</small></div></div></td>
-   <td><span class="pill ${u.st}">${{ok:T('مفعّل','Active'),wait:T('مستني','Waiting'),off:T('موقوف','Blocked')}[u.st]}</span></td>
-   <td><div class="chips">${SECTIONS.filter(s=>!s.admin).map(s=>`<span class="chip ${u.s.includes(s.id)?'on':''}" onclick="tog(${i},'s','${s.id}')">${s[LANG]}</span>`).join('')}</div></td>
-   <td><div class="chips">${PLANTS.map(p=>`<span class="chip ${u.p.includes(p)?'on':''}" onclick="tog(${i},'p','${p}')">${p}</span>`).join('')}</div></td>
-   <td style="white-space:nowrap">${u.admin?'':u.st==='ok'?`<button class="btn sm" onclick="setSt(${i},'off')">${T('إيقاف','Block')}</button>`:`<button class="btn sm green" onclick="setSt(${i},'ok')">${T('تفعيل','Approve')}</button>`}</td></tr>`).join('')}
-function tog(i,k,v){const u=USERS[i];if(u.admin)return toast(T('الأدمن يشوف كل حاجة','Admin sees everything'));const a=u[k];a.includes(v)?a.splice(a.indexOf(v),1):a.push(v);renderAdmin();toast(T('اتحفظ ✓','Saved ✓'))}
-function setSt(i,s){USERS[i].st=s;if(s==='ok'&&!USERS[i].s.length){USERS[i].s=['dash'];USERS[i].p=[...PLANTS]}renderAdmin();toast(s==='ok'?T('اتفعّل ✓','Approved ✓'):T('اتوقف','Blocked'))}
-
-/* ---------- init ---------- */
-document.getElementById('q').oninput=()=>{if(cur!=='prod')go('prod');renderTrips()};
-PLANTS.forEach(p=>fPlant.add(new Option(p,p)));
-const iso=d=>d.toISOString().slice(0,10);fFrom.value=iso(days[29]);fTo.value=iso(days[29]);
-try{LANG=localStorage.ncmLang||'en'}catch(e){}
-applyLang();
-login.style.display='none';app.style.display='grid';go('dash');
-</script>
+<script src="app.js"></script>
 </body>
 </html>
