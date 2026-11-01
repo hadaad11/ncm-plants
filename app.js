@@ -414,7 +414,7 @@ function rSheet(sec) {
 function rMonitor(v) {
   window.HUB = {monitor: S.data.monitor};             // monitor.html reads parent.HUB.monitor
   const p = panel(v); p.style.padding = '0'; p.style.overflow = 'hidden';
-  p.innerHTML = '<iframe id="monF" src="monitor.html" title="Monitor" style="width:100%;height:1250px;border:0;display:block;background:transparent"></iframe>';
+  p.innerHTML = '<iframe id="monF" src="monitor.html?v=3" title="Monitor" style="width:100%;height:1250px;border:0;display:block;background:transparent"></iframe>';
   const f = p.querySelector('iframe');
   f.onload = () => {
     try {
