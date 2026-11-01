@@ -1,5 +1,9 @@
 {
  "hidden": [
-  "hq"
+  "hq",
+  "del",
+  "cust",
+  "ret",
+  "tm"
  ]
 }
