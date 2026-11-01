@@ -469,7 +469,9 @@ async function ghToken() {
 async function gh(path, opt = {}) {
   const r = await fetch('https://api.github.com/repos/' + REPO + path, {...opt, cache: 'no-store',
     headers: {Accept: 'application/vnd.github+json', Authorization: 'Bearer ' + await ghToken(), ...(opt.headers || {})}});
-  if (!r.ok) throw new Error('GitHub ' + r.status + (r.status === 401 ? ' — ' + L('the GitHub key is wrong or expired|مفتاح GitHub غلط أو انتهى') : ''));
+  if (!r.ok) throw new Error('GitHub ' + r.status + ({
+    401: ' — ' + L('the GitHub key is wrong or expired|مفتاح GitHub غلط أو انتهى'),
+    403: ' — ' + L('the GitHub key can read but not save: on github.com/settings/personal-access-tokens edit it and set Contents to "Read and write"|مفتاح GitHub بيقرا بس ومش بيحفظ: من github.com/settings/personal-access-tokens عدّله وخلي Contents على "Read and write"')}[r.status] || ''));
   return r.json();
 }
 async function loadUsers() {
