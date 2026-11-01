@@ -418,9 +418,12 @@ function rSheet(sec) {
 function rHub(v) {
   const url = S.data.hub?.url || 'https://hadaad11.github.io/ncm-hub/';
   const p = panel(v); p.style.padding = '0'; p.style.overflow = 'hidden';
-  p.innerHTML = `<div class="tbar" style="margin:0;padding:10px 14px"><span class="note">${L('The hub asks for its own password the first time on this device.|الهب بيطلب كلمة السر بتاعته أول مرة على الجهاز ده.')}</span><span class="grow"></span>
-    <a class="btn sm" href="${esc(url)}" target="_blank" rel="noopener">${L('Open in a new tab ↗|افتحه في تاب جديدة ↗')}</a></div>
+  const pw = S.data.hub?.pw;
+  p.innerHTML = `<div class="tbar" style="margin:0;padding:10px 14px"><span class="note">${pw ? L('Opened for you — no hub password needed.|اتفتح لك — من غير كلمة سر الهب.') : L('The hub asks for its own password the first time on this device.|الهب بيطلب كلمة السر بتاعته أول مرة على الجهاز ده.')}</span><span class="grow"></span>
+    ${pw ? '' : `<a class="btn sm" href="${esc(url)}" target="_blank" rel="noopener">${L('Open in a new tab ↗|افتحه في تاب جديدة ↗')}</a>`}</div>
     <iframe src="${esc(url)}" title="NCM Hub" style="width:100%;height:calc(100vh - 210px);min-height:600px;border:0;display:block"></iframe>`;
+  // same github.io origin: unlock the hub with its own open(pw, remember=false), nothing is stored on the device
+  if (pw) p.querySelector('iframe').onload = e => { try { const w = e.target.contentWindow; if (w.document.querySelector('#lock:not(.hidden)')) w.open(pw, false); } catch (x) {} };
 }
 
 /* ---------- monitor: the same glowing network page as the NCM Hub, fed with the snapshot ---------- */
@@ -476,6 +479,23 @@ function rSettings(v) {
     ${cfg.map(p => `<tr><td><b>${esc(p.label)}</b></td><td>${esc(p.host) || '—'}</td><td>${esc(p.port)}</td><td><small>${esc(p.path)}</small></td>
       <td><span class="pill ${p.up ? 'ok' : 'off'}">${p.up ? L('Answering|شغالة') : L('Not reachable|مش متاحة')}</span></td></tr>`).join('') || `<tr><td colspan="5" class="empty">${L('Shown after the next data update (5 min)|بيظهر بعد التحديث الجاي (5 دقايق)')}</td></tr>`}</tbody></table></div>
     <p class="note">${L('To add a plant or change an IP, use Settings in the NCM PLANTS program on the office network; the site follows it within 5 minutes. It is not editable from the internet on purpose: these connections reach the plant databases.|لإضافة محطة أو تغيير IP استخدم الإعدادات في برنامج NCM PLANTS على شبكة المكتب؛ الموقع بيتبعه خلال 5 دقايق. مقفولة من الإنترنت عن قصد لأنها بتوصل لقواعد بيانات المحطات.')}</p>`;
+
+  const hp = panel(v, '🔑 ' + L('NCM Hub password|كلمة سر NCM-HUB'));
+  hp.innerHTML += `<p class="note" style="margin-top:0">${L('Type the hub password once. It is sent encrypted to the server only, and users with the NCM Hub permission get the hub opened without typing it.|اكتب كلمة سر الهب مرة واحدة. بتتبعت متشفّرة للسيرفر بس، واللي معاهم صلاحية NCM-HUB الهب بيفتح لهم من غير ما يكتبوها.')}
+    ${S.data.hub?.pw ? ' ✅ ' + L('Already set.|متسجلة.') : ''}</p>
+    <div class="tbar" style="margin:0"><input type="password" id="hP" autocomplete="off" placeholder="${L('Hub password|كلمة سر الهب')}" style="flex:1"><button class="btn primary" id="hS">${L('Save|حفظ')}</button></div><div class="err" id="hE"></div>`;
+  $('hS').onclick = async () => {
+    const pw = $('hP').value; $('hE').textContent = '';
+    if (!pw) return;
+    try {
+      const pub = await crypto.subtle.importKey('spki', ub64(S.meta.pub.replace(/-----[^-]+-----|\s/g, '')), {name: 'RSA-OAEP', hash: 'SHA-256'}, false, ['encrypt']);
+      const box = b64(await crypto.subtle.encrypt({name: 'RSA-OAEP'}, pub, enc.encode(JSON.stringify({pw}))));
+      let sha; try { sha = (await gh('/contents/hub_secret.json?ref=main')).sha; } catch (e) { if (!/404/.test(e.message)) throw e; }
+      await gh('/contents/hub_secret.json', {method: 'PUT', body: JSON.stringify({message: 'settings: hub password (encrypted for the server)', branch: 'main', ...(sha ? {sha} : {}),
+        content: b64(enc.encode(JSON.stringify({box}, null, 1)))})});
+      $('hP').value = ''; toast(L('Saved ✓ — the Hub tab opens by itself within 5 minutes|اتحفظ ✓ — تابة الهب هتفتح لوحدها خلال 5 دقايق'));
+    } catch (e) { $('hE').textContent = e.message; }
+  };
 
   const shown = SCREENS.filter(s => !s.admin);
   const sp = panel(v, '👁️ ' + L('Visible screens|الشاشات الظاهرة'));
