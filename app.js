@@ -161,6 +161,7 @@ const SCREENS = [
   {id: 'manpower', sec: 'manpower', ic: 'users', t: 'Manpower|المانباور', sub: 'Staff sheets|شيتات العمالة', r: () => rSheet('manpower')},
   {id: 'maint', sec: 'maint', ic: 'wrench', t: 'Maintenance|الصيانة', sub: 'Maintenance sheets|شيتات الصيانة', r: () => rSheet('maint')},
   {id: 'monitor', sec: 'monitor', ic: 'pulse', t: 'Monitor|المونيتور', sub: 'Server and network|حالة السيرفر والشبكة', r: rMonitor},
+  {id: 'hub', sec: 'hub', ic: 'grid', t: 'NCM Hub|NCM-HUB', sub: 'The NCM Hub, inside this site|NCM-HUB جوه الموقع ده', r: rHub},
   {id: 'users', admin: true, ic: 'shield', t: 'Admin · Users|الأدمن · المستخدمين', sub: 'Add users, passwords and who sees what|إضافة المستخدمين وكلمات السر ومين يشوف إيه', r: rUsers},
 ];
 const hidden = s => (S.settings?.hidden || []).includes(s.id);     // switched off in Admin > Settings
@@ -413,6 +414,15 @@ function rSheet(sec) {
   table(v, cols, data, {file: sec + '-' + t});
 }
 
+/* ---------- NCM Hub: the whole hub page inside the site (same github.io origin, it keeps its own password) ---------- */
+function rHub(v) {
+  const url = S.data.hub?.url || 'https://hadaad11.github.io/ncm-hub/';
+  const p = panel(v); p.style.padding = '0'; p.style.overflow = 'hidden';
+  p.innerHTML = `<div class="tbar" style="margin:0;padding:10px 14px"><span class="note">${L('The hub asks for its own password the first time on this device.|الهب بيطلب كلمة السر بتاعته أول مرة على الجهاز ده.')}</span><span class="grow"></span>
+    <a class="btn sm" href="${esc(url)}" target="_blank" rel="noopener">${L('Open in a new tab ↗|افتحه في تاب جديدة ↗')}</a></div>
+    <iframe src="${esc(url)}" title="NCM Hub" style="width:100%;height:calc(100vh - 210px);min-height:600px;border:0;display:block"></iframe>`;
+}
+
 /* ---------- monitor: the same glowing network page as the NCM Hub, fed with the snapshot ---------- */
 function rMonitor(v) {
   window.HUB = {monitor: S.data.monitor};             // monitor.html reads parent.HUB.monitor
@@ -432,7 +442,7 @@ function rMonitor(v) {
 /* ------------------------------------------------------------------ admin: users */
 const PERMS = [['prod', 'Production (dashboard, deliveries, customers, returned, trucks)|الإنتاج (الرئيسية، الرحلات، العملاء، المرتجع، الخلاطات)'],
   ['mat', 'Materials (consumption, target vs actual, formula control)|المواد (الاستهلاك، المستهدف والفعلي، مراجعة الخلطات)'], ['mix', 'Mix Designs|تصميمات الخلطات'],
-  ['cons', 'Consumption (Mix Theory vs Dry)|الاستهلاك (النظري والفعلي)'], ['cement', 'Cement|الأسمنت'], ['manpower', 'Manpower|المانباور'], ['maint', 'Maintenance|الصيانة'], ['monitor', 'Monitor|المونيتور']];
+  ['cons', 'Consumption (Mix Theory vs Dry)|الاستهلاك (النظري والفعلي)'], ['cement', 'Cement|الأسمنت'], ['manpower', 'Manpower|المانباور'], ['maint', 'Maintenance|الصيانة'], ['monitor', 'Monitor|المونيتور'], ['hub', 'NCM Hub|NCM-HUB']];
 const GH = {token: '', sha: '', users: null};
 async function ghToken() {
   if (GH.token) return GH.token;
