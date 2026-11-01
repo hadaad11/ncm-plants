@@ -134,8 +134,15 @@ function plantRows(sec, pick) {                     // rows from every allowed p
   }
   return out;
 }
-const inRange = d => { d = isoDay(d); return (!F.from || d >= F.from) && (!F.to || d <= F.to); };
-const deliveries = () => plantRows('prod', d => d.uretim).filter(r => inRange(r.Tarih));
+// Date + optional time, like the program's From / To boxes: the "To" minute counts in full (08:00 -> 08:00:59).
+const hhmm = s => (String(s || '').match(/(\d{1,2}):(\d{2})/) || []).slice(1).map(x => x.padStart(2, '0')).join(':');
+const stamp = (d, t) => isoDay(d) + ' ' + (hhmm(t) || hhmm(String(d).slice(10)) || '00:00');
+const inRange = (d, t) => {
+  const s = stamp(d, t), a = (F.from || '0000-00-00') + ' ' + (F.fromT || '00:00'), b = (F.to || '9999-99-99') + ' ' + (F.toT || '23:59');
+  return s >= a && s <= b;
+};
+// filter on the delivery-note time (IrsSaat), like the program; the Time column shows the batch start
+const deliveries = () => plantRows('prod', d => d.uretim).filter(r => inRange(r.Tarih, r.IrsSaat || r.Saat));
 
 /* ------------------------------------------------------------------ screens */
 const SCREENS = [
@@ -184,10 +191,12 @@ function filterBar(el, opts, redraw) {
   const plants = plantsOf(opts.sec);
   const bar = document.createElement('div'); bar.className = 'panel glass';
   bar.innerHTML = `<div class="tbar" style="margin:0">
-    ${opts.dates ? `<input type="date" id="fFrom" min="${S.meta.from}" max="${S.meta.to}" value="${F.from}">
-    <input type="date" id="fTo" min="${S.meta.from}" max="${S.meta.to}" value="${F.to}">
-    <div class="seg" id="fQuick">${[['today', 'Today|النهارده'], ['yday', 'Yesterday|امبارح'], ['month', 'This month|الشهر ده'], ['last', 'Last month|الشهر اللي فات']].map(([k, t]) => `<button data-k="${k}">${L(t)}</button>`).join('')}</div>` : ''}
-    ${opts.period ? `<div class="seg" id="fPer">${[['today', 'Today|النهارده'], ['yesterday', 'Yesterday|امبارح'], ['month', 'This month|الشهر ده'], ['lastmonth', 'Last month|الشهر اللي فات']].map(([k, t]) => `<button data-k="${k}" class="${F.period === k ? 'on' : ''}">${L(t)}</button>`).join('')}</div>` : ''}
+    ${opts.dates ? `<span class="note">${L('From|من')}</span><input type="date" id="fFrom" min="${S.meta.from}" max="${S.meta.to}" value="${F.from}">
+    ${opts.time ? `<input type="time" id="fFromT" value="${F.fromT || ''}" title="${L('Start hour (empty = 00:00)|ساعة البداية (فاضي = 00:00)')}">` : ''}
+    <span class="note">${L('To|إلى')}</span><input type="date" id="fTo" min="${S.meta.from}" max="${S.meta.to}" value="${F.to}">
+    ${opts.time ? `<input type="time" id="fToT" value="${F.toT || ''}" title="${L('End hour (empty = end of day)|ساعة النهاية (فاضي = آخر اليوم)')}">` : ''}
+    <div class="seg" id="fQuick">${[['today', 'Today|النهارده'], ['yday', 'Yesterday|امبارح'], ...(opts.time ? [['d8', '8 AM → 8 AM|٨ص ← ٨ص']] : []), ['month', 'This month|الشهر ده'], ['last', 'Last month|الشهر اللي فات']].map(([k, t]) => `<button data-k="${k}">${L(t)}</button>`).join('')}</div>` : ''}
+    ${opts.period ? `<div class="seg" id="fPer">${[['today', 'Today|النهارده'], ['yesterday', 'Yesterday|امبارح'], ['day8', '8 AM → 8 AM|٨ص ← ٨ص'], ['month', 'This month|الشهر ده'], ['lastmonth', 'Last month|الشهر اللي فات']].filter(([k]) => S.meta.periods?.[k]).map(([k, t]) => `<button data-k="${k}" class="${F.period === k ? 'on' : ''}">${L(t)}</button>`).join('')}</div>` : ''}
     ${plants.length > 1 || opts.plantList ? `<select id="fPlant"><option value="">${L('All plants|كل المحطات')}</option>${(opts.plantList || plants.map(p => [p.id, p.label])).map(([v, t]) => `<option value="${esc(v)}" ${F.plant === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>` : ''}
   </div>`;
   el.appendChild(bar);
@@ -199,10 +208,16 @@ function filterBar(el, opts, redraw) {
       const k = e.target.dataset.k; if (!k) return;
       const t = new Date(S.meta.to + 'T00:00'), d = x => x.toISOString().slice(0, 10), y = new Date(t); y.setDate(y.getDate() - 1);
       const m1 = S.meta.to.slice(0, 8) + '01', lm = new Date(t.getFullYear(), t.getMonth(), 0);
-      [F.from, F.to] = {today: [S.meta.to, S.meta.to], yday: [d(new Date(y.getTime() - y.getTimezoneOffset() * 6e4)), d(new Date(y.getTime() - y.getTimezoneOffset() * 6e4))],
+      const yd = d(new Date(y.getTime() - y.getTimezoneOffset() * 6e4));
+      [F.from, F.to] = {today: [S.meta.to, S.meta.to], yday: [yd, yd], d8: [yd, S.meta.to],
         month: [m1, S.meta.to], last: [S.meta.from, `${lm.getFullYear()}-${String(lm.getMonth() + 1).padStart(2, '0')}-${String(lm.getDate()).padStart(2, '0')}`]}[k];
-      q('fFrom').value = F.from; q('fTo').value = F.to; redraw();
+      [F.fromT, F.toT] = k === 'd8' ? ['08:00', '08:00'] : ['', ''];
+      redraw();
     };
+    if (opts.time) {
+      q('fFromT').onchange = e => { F.fromT = e.target.value; redraw(); };
+      q('fToT').onchange = e => { F.toT = e.target.value; redraw(); };
+    }
   }
   if (opts.period) q('fPer').onclick = e => { if (!e.target.dataset.k) return; F.period = e.target.dataset.k; q('fPer').querySelectorAll('button').forEach(b => b.classList.toggle('on', b === e.target)); redraw(); };
   if (q('fPlant')) q('fPlant').onchange = e => { F.plant = e.target.value; redraw(); };
@@ -292,7 +307,7 @@ function rDash(v) {
 /* ---------- production screens ---------- */
 function rDeliveries(v) {
   const redraw = () => show('del', true);
-  filterBar(v, {sec: 'prod', dates: true}, redraw);
+  filterBar(v, {sec: 'prod', dates: true, time: true}, redraw);
   const d = deliveries();
   table(v, [
     {k: 'Tarih', l: 'Date|التاريخ', f: x => egDay(isoDay(x))}, {k: 'Saat', l: 'Time|الوقت', f: x => esc(String(x).slice(0, 5))}, {k: '_p', l: 'Plant|المحطة'},
@@ -302,7 +317,7 @@ function rDeliveries(v) {
     {k: 'Sofor', l: 'Driver|السواق'}, {k: 'Plaka', l: 'Plate|العربية'}], d, {sort: 'Tarih', desc: 1, file: 'deliveries'});
 }
 function rCustomers(v) {
-  filterBar(v, {sec: 'prod', dates: true}, () => show('cust', true));
+  filterBar(v, {sec: 'prod', dates: true, time: true}, () => show('cust', true));
   const g = group(deliveries(), ['Musteri', 'Santiye', 'Urun', 'FormulKodu'], ['SiparisM3', 'ReelM3']);
   const top = group(deliveries(), ['Musteri'], ['SiparisM3']).sort((a, b) => b.SiparisM3 - a.SiparisM3).slice(0, 10);
   const pc = panel(v, L('Top customers (m³)|أكبر العملاء (م³)'));
@@ -312,14 +327,14 @@ function rCustomers(v) {
     {k: '_n', l: 'Deliveries|الرحلات', num: 1, d: 0, sum: 1}, {k: 'SiparisM3', l: 'Total m³|الإجمالي م³', num: 1, sum: 1}, {k: 'ReelM3', l: 'Actual m³|الفعلي م³', num: 1, sum: 1}], g, {sort: 'SiparisM3', desc: 1, file: 'customers'});
 }
 function rReturned(v) {
-  filterBar(v, {sec: 'prod', dates: true}, () => show('ret', true));
-  const d = plantRows('prod', x => x.iade).filter(r => inRange(r.Tarih));
+  filterBar(v, {sec: 'prod', dates: true, time: true}, () => show('ret', true));
+  const d = plantRows('prod', x => x.iade).filter(r => inRange(r.Tarih, r.IrsSaat));
   table(v, [{k: 'Tarih', l: 'Date|التاريخ', f: x => egDay(isoDay(x))}, {k: '_p', l: 'Plant|المحطة'}, {k: 'IrsaliyeNo', l: 'Delivery No|رقم الإذن'}, {k: 'Musteri', l: 'Customer|العميل'},
     {k: 'Santiye', l: 'Site|الموقع'}, {k: 'Urun', l: 'Product|المنتج'}, {k: 'IadeM3', l: 'Returned m³|المرتجع م³', num: 1, sum: 1}, {k: 'KullanilanM3', l: 'Reused m³|المستخدم م³', num: 1, sum: 1},
     {k: 'KalanM3', l: 'Wasted m³|الهالك م³', num: 1, sum: 1}, {k: 'Plaka', l: 'Plate|العربية'}], d, {sort: 'Tarih', desc: 1, file: 'returned'});
 }
 function rTrucks(v) {
-  filterBar(v, {sec: 'prod', dates: true}, () => show('tm', true));
+  filterBar(v, {sec: 'prod', dates: true, time: true}, () => show('tm', true));
   const g = group(deliveries(), ['Plaka'], ['SiparisM3', 'ReelM3']).map(r => (r.avg = r.SiparisM3 / r._n, r));
   table(v, [{k: 'Plaka', l: 'Plate|العربية'}, {k: '_n', l: 'Trips|الرحلات', num: 1, d: 0, sum: 1}, {k: 'SiparisM3', l: 'Total m³|الإجمالي م³', num: 1, sum: 1},
     {k: 'ReelM3', l: 'Actual m³|الفعلي م³', num: 1, sum: 1}, {k: 'avg', l: 'Avg m³/trip|متوسط م³/رحلة', num: 1, d: 2}], g, {sort: '_n', desc: 1, file: 'truck-mixers'});
@@ -331,7 +346,8 @@ function rMat(kind) {
   filterBar(v, {sec: 'mat', period: true}, () => show(cur, true));
   const d = plantRows('mat', x => x[F.period]?.[kind]);
   const per = S.meta.periods?.[F.period];
-  if (per) panel(v).innerHTML = `<div class="note">${L('Period|الفترة')}: ${egDay(per[0].slice(0, 10))} → ${egDay(per[1].slice(0, 10))} (${L('the end is not included|النهاية مش محسوبة')})</div>`;
+  if (per) panel(v).innerHTML = `<div class="note">${L('Period|الفترة')}: ${egDay(per[0].slice(0, 10))} ${per[0].slice(11, 16)} → ${egDay(per[1].slice(0, 10))} ${per[1].slice(11, 16)}
+    · ${L('Material screens use fixed periods computed on the server; for any other hours use Deliveries.|شاشات المواد بفترات ثابتة محسوبة على السيرفر؛ لأي ساعات تانية استخدم شاشة الرحلات.')}</div>`;
   if (kind === 'malzeme') {
     const g = group(d, ['Kod', 'Malzeme', 'Grup'], ['ToplamKg']);
     table(v, [{k: 'Kod', l: 'Code|الكود'}, {k: 'Malzeme', l: 'Material|المادة'}, {k: 'Grup', l: 'Group|المجموعة'}, {k: 'ToplamKg', l: 'Total (kg)|الإجمالي (كجم)', num: 1, d: 0, sum: 1}], g, {sort: 'ToplamKg', desc: 1, file: 'material'});
@@ -394,22 +410,22 @@ function rSheet(sec) {
   table(v, cols, data, {file: sec + '-' + t});
 }
 
-/* ---------- monitor ---------- */
+/* ---------- monitor: the same glowing network page as the NCM Hub, fed with the snapshot ---------- */
 function rMonitor(v) {
-  const m = S.data.monitor, nodes = Object.values(m.nodes || {});
-  const col = {ok: 'var(--green)', slow: 'var(--warn)', down: 'var(--danger)'};
-  const s = m.server || {};
-  const kp = document.createElement('div'); kp.className = 'kpis'; v.appendChild(kp);
-  kp.innerHTML = [['CPU', (s.cpu ?? '-') + '%', 'pulse', 'var(--blue)'], ['RAM', (s.ram_pct ?? '-') + '%', 'cube', 'var(--green)'],
-    [L('Up for|شغال من'), fmt(s.uptime_h, 0) + ' h', 'refresh', '#2f8fd8'], [L('Problems|مشاكل'), nodes.filter(n => n.status !== 'ok').length, 'shield', '#7d7d7d']]
-    .map(([l, val, ic, c]) => `<div class="kpi glass"><div class="h"><span class="ic" style="background:${c}"><svg class="i"><use href="#i-${ic}"/></svg></span>${l}</div><div class="v">${val}</div></div>`).join('');
-  const p = panel(v, L('Everything the monitor checks|كل اللي المونيتور بيراقبه'));
-  p.innerHTML += `<div class="sys" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))">${nodes.map(n => `<span title="${esc(n.detail)}"><i class="dot" style="background:${col[n.status] || 'var(--ink3)'}"></i><b>${esc(n.label)}</b>&nbsp;<small style="color:var(--ink3)">${esc(n.detail)}</small></span>`).join('')}</div>`;
-  const a = panel(v, L('Latest alerts|آخر التنبيهات'));
-  a.innerHTML += `<ul class="act">${(m.alerts || []).slice(0, 12).map(x => `<li><span class="dot" style="background:${x.level === 'ok' ? 'var(--green)' : 'var(--danger)'}"></span><div><b>${esc(x.text)}</b><small>${new Date(x.t * 1000).toLocaleString('en-GB')}</small></div></li>`).join('')}</ul>`;
-  if (S.ring.admin && (m.export_problems || []).length) panel(v, L('Export warnings|تحذيرات التصدير')).innerHTML += `<ul class="act">${m.export_problems.map(x => `<li><div><small>${esc(x)}</small></div></li>`).join('')}</ul>`;
+  window.HUB = {monitor: S.data.monitor};             // monitor.html reads parent.HUB.monitor
+  const p = panel(v); p.style.padding = '0'; p.style.overflow = 'hidden';
+  p.innerHTML = '<iframe id="monF" src="monitor.html" title="Monitor" style="width:100%;height:1250px;border:0;display:block;background:transparent"></iframe>';
+  const f = p.querySelector('iframe');
+  f.onload = () => {
+    try {
+      const d = f.contentDocument, th = document.documentElement.dataset.theme;
+      if (th) d.documentElement.dataset.theme = th;
+      const fit = () => { f.style.height = Math.max(700, d.documentElement.scrollHeight) + 'px'; };
+      fit(); setTimeout(fit, 800);
+    } catch (e) {}
+  };
+  if (S.ring.admin && (S.data.monitor.export_problems || []).length) panel(v, L('Export warnings|تحذيرات التصدير')).innerHTML += `<ul class="act">${S.data.monitor.export_problems.map(x => `<li><div><small>${esc(x)}</small></div></li>`).join('')}</ul>`;
 }
-
 /* ------------------------------------------------------------------ admin: users */
 const PERMS = [['prod', 'Production (dashboard, deliveries, customers, returned, trucks)|الإنتاج (الرئيسية، الرحلات، العملاء، المرتجع، الخلاطات)'],
   ['mat', 'Materials (consumption, target vs actual, formula control)|المواد (الاستهلاك، المستهدف والفعلي، مراجعة الخلطات)'], ['mix', 'Mix Designs|تصميمات الخلطات'],
