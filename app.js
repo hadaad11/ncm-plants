@@ -160,13 +160,13 @@ const SCREENS = [
   {id: 'manpower', sec: 'manpower', ic: 'users', t: 'Manpower|المانباور', sub: 'Staff sheets|شيتات العمالة', r: () => rSheet('manpower')},
   {id: 'maint', sec: 'maint', ic: 'wrench', t: 'Maintenance|الصيانة', sub: 'Maintenance sheets|شيتات الصيانة', r: () => rSheet('maint')},
   {id: 'monitor', sec: 'monitor', ic: 'pulse', t: 'Monitor|المونيتور', sub: 'Server and network|حالة السيرفر والشبكة', r: rMonitor},
-  {id: 'users', admin: true, ic: 'shield', t: 'Users|المستخدمين', sub: 'Who sees what|مين يشوف إيه', r: rUsers},
+  {id: 'users', admin: true, ic: 'shield', t: 'Admin · Users|الأدمن · المستخدمين', sub: 'Add users, passwords and who sees what|إضافة المستخدمين وكلمات السر ومين يشوف إيه', r: rUsers},
 ];
 const can = s => s.admin ? !!S.ring?.admin : (['prod', 'mat', 'mix'].includes(s.sec) ? plantsOf(s.sec).length > 0 : !!S.data[s.sec]);
 
 function buildNav() {
   $('nav').innerHTML = SCREENS.filter(can).map(s => (s.admin ? '<div class="sep"></div>' : '') +
-    `<button data-p="${s.id}"><svg class="i"><use href="#i-${s.ic}"/></svg>${L(s.t)}</button>`).join('') ||
+    `<button data-p="${s.id}" class="${s.admin ? 'admin' : ''}"><svg class="i"><use href="#i-${s.ic}"/></svg>${L(s.t)}</button>`).join('') ||
     `<div class="empty">${L('The admin did not give you any screen yet.|الأدمن لسه ما اداكش أي شاشة.')}</div>`;
   $('nav').querySelectorAll('button').forEach(b => b.onclick = () => { show(b.dataset.p); $('side').classList.remove('open'); });
 }
