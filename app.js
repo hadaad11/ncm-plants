@@ -148,6 +148,7 @@ const deliveries = () => plantRows('prod', d => d.uretim).filter(r => inRange(r.
 /* ------------------------------------------------------------------ screens */
 const SCREENS = [
   {id: 'dash', sec: 'prod', ic: 'grid', t: 'Dashboard|الرئيسية', sub: 'Overview of all plants|نظرة سريعة على المحطات', r: rDash},
+  {id: 'hq', sec: 'prod', ic: 'factory', t: 'Plant Quantity|كميات المحطات', sub: 'Production by plant|الإنتاج لكل محطة', r: rPlantQty},
   {id: 'del', sec: 'prod', ic: 'truck', t: 'Deliveries|الرحلات', sub: 'Every delivery note|كل الرحلات بالتفصيل', r: rDeliveries},
   {id: 'cust', sec: 'prod', ic: 'users', t: 'Customer Summary|ملخص العملاء', sub: 'm³ per customer, site and mix|الكميات لكل عميل وموقع وخلطة', r: rCustomers},
   {id: 'ret', sec: 'prod', ic: 'back', t: 'Returned Concrete|الخرسانة المرتجعة', sub: 'Returned, reused and wasted m³|المرتجع والمستخدم والهالك', r: rReturned},
@@ -158,12 +159,11 @@ const SCREENS = [
   {id: 'mix', sec: 'mix', ic: 'doc', t: 'Mix Designs|تصميمات الخلطات', sub: 'kg/m³ of every recipe|كيلو/م³ لكل خلطة', r: rMix},
   {id: 'cons', sec: 'cons', ic: 'list', t: 'Consumption|الاستهلاك', sub: 'Mix Theory vs Dry Real|النظري مقابل الفعلي', r: rCons},
   // with the NCM Hub permission these show the hub's own pages (aging, grease…), otherwise the sheets as tables
-  {id: 'cement', sec: 'cement', ic: 'silo', t: 'Cement|الأسمنت', sub: 'Cement tracking|متابعة الأسمنت', r: v => S.data.hub?.pw ? rHubPage(v, 'cement') : rSheet('cement')},
-  {id: 'manpower', sec: 'manpower', ic: 'users', t: 'Manpower|المانباور', sub: 'Staff and shifts|العمالة والورديات', r: v => S.data.hub?.pw ? rHubPage(v, 'manpower') : rSheet('manpower')},
-  {id: 'maint', sec: 'maint', ic: 'wrench', t: 'Maintenance|الصيانة', sub: 'Maintenance and grease|الصيانة والشحم', r: v => S.data.hub?.pw ? rHubPage(v, 'maintenance') : rSheet('maint')},
+  {id: 'cement', sec: 'cement', ic: 'silo', t: 'Cement|الأسمنت', sub: 'Cement tracking|متابعة الأسمنت', r: () => rSheet('cement')},
+  {id: 'manpower', sec: 'manpower', ic: 'users', t: 'Manpower|المانباور', sub: 'Staff and shifts|العمالة والورديات', r: () => rSheet('manpower')},
+  {id: 'maint', sec: 'maint', ic: 'wrench', t: 'Maintenance|الصيانة', sub: 'Maintenance and grease|الصيانة والشحم', r: () => rSheet('maint')},
   {id: 'monitor', sec: 'monitor', ic: 'pulse', t: 'Monitor|المونيتور', sub: 'Server and network|حالة السيرفر والشبكة', r: rMonitor},
-  // the NCM Hub pages, each as its own tab (permission "NCM Hub")
-  {id: 'hq', sec: 'hub', ic: 'factory', t: 'Plant Quantity|كميات المحطات', sub: 'Production by plant (NCM Hub)|الإنتاج لكل محطة (NCM-HUB)', r: v => rHubPage(v, 'plants')},
+  // outside pages that were in the NCM Hub (permission "Pour Tracker & Ice")
   {id: 'pour', sec: 'hub', ic: 'truck', t: 'Pour Tracker|متابعة الصبات', sub: 'Pours and requests|الصبات والطلبات', r: v => rFrame(v, 'https://hadaad11.github.io/pourtracker-/')},
   {id: 'ice', sec: 'hub', ic: 'cube', t: 'Ice Calculate|حساب التلج', sub: 'Ice for the mix temperature|التلج لدرجة حرارة الخلطة', r: v => rFrame(v, 'https://elkady591.github.io/Ice-Calculator/')},
   {id: 'users', admin: true, ic: 'shield', t: 'Admin · Users|الأدمن · المستخدمين', sub: 'Add users, passwords and who sees what|إضافة المستخدمين وكلمات السر ومين يشوف إيه', r: rUsers},
@@ -324,6 +324,24 @@ function rDeliveries(v) {
     {k: 'ReelM3', l: 'Actual m³|الفعلي م³', num: 1, sum: 1}, {k: 'ReelCimento', l: 'Cement kg|أسمنت كجم', num: 1, d: 0, sum: 1}, {k: 'ReelSu', l: 'Water kg|مياه كجم', num: 1, d: 0, sum: 1},
     {k: 'Sofor', l: 'Driver|السواق'}, {k: 'Plaka', l: 'Plate|العربية'}], d, {sort: 'Tarih', desc: 1, file: 'deliveries'});
 }
+function rPlantQty(v) {
+  filterBar(v, {sec: 'prod', dates: true, time: true}, () => show('hq', true));
+  const d = deliveries();
+  const g = group(d, ['_p'], ['SiparisM3', 'ReelM3', 'ReelCimento', 'ReelSu']);
+  const pc = panel(v, L('m³ per plant|م³ لكل محطة'));
+  chart(pc, 'cPQ', {type: 'bar', data: {labels: g.map(r => r._p), datasets: [
+    {label: L('Ordered m³|المطلوب م³'), data: g.map(r => r.SiparisM3), backgroundColor: '#0067a8', borderRadius: 6},
+    {label: L('Actual m³|الفعلي م³'), data: g.map(r => r.ReelM3), backgroundColor: '#1ba352', borderRadius: 6}]},
+    options: {scales: {x: {grid: {display: false}}, y: {grid: {color: 'rgba(125,125,125,.15)'}}}}}, 240);
+  table(v, [{k: '_p', l: 'Plant|المحطة'}, {k: '_n', l: 'Trips|الرحلات', num: 1, d: 0, sum: 1}, {k: 'SiparisM3', l: 'Ordered m³|المطلوب م³', num: 1, sum: 1},
+    {k: 'ReelM3', l: 'Actual m³|الفعلي م³', num: 1, sum: 1}, {k: 'ReelCimento', l: 'Cement kg|أسمنت كجم', num: 1, d: 0, sum: 1}, {k: 'ReelSu', l: 'Water kg|مياه كجم', num: 1, d: 0, sum: 1}],
+    g, {sort: '_p', file: 'plant-quantity', title: L('Per plant|لكل محطة')});
+  // day x plant (by delivery-note date)
+  const plants = [...new Set(d.map(r => r._p))].sort(), days = {};
+  d.forEach(r => { const k = isoDay(r.Tarih); (days[k] = days[k] || {_d: k, _t: 0})[r._p] = (days[k][r._p] || 0) + (+r.SiparisM3 || 0); days[k]._t += +r.SiparisM3 || 0; });
+  table(v, [{k: '_d', l: 'Date|التاريخ', f: x => egDay(x)}, ...plants.map(p => ({k: p, l: p, num: 1, sum: 1})), {k: '_t', l: 'Total|الإجمالي', num: 1, sum: 1}],
+    Object.values(days), {sort: '_d', desc: 1, file: 'plant-quantity-by-day', title: L('By day (m³)|حسب اليوم (م³)')});
+}
 function rCustomers(v) {
   filterBar(v, {sec: 'prod', dates: true, time: true}, () => show('cust', true));
   const g = group(deliveries(), ['Musteri', 'Santiye', 'Urun', 'FormulKodu'], ['SiparisM3', 'ReelM3']);
@@ -418,26 +436,11 @@ function rSheet(sec) {
   table(v, cols, data, {file: sec + '-' + t});
 }
 
-/* ---------- NCM Hub pages, one per tab ---------- */
+/* ---------- outside pages (Pour Tracker, Ice Calculate) inside the content area ---------- */
 function rFrame(v, url) {                            // a whole page in the content area
   const p = panel(v); p.style.padding = '0'; p.style.overflow = 'hidden';
   p.innerHTML = `<iframe src="${esc(url)}" title="${esc(L(SCREENS.find(s => s.id === cur).t))}" style="width:100%;height:calc(100vh - 170px);min-height:600px;border:0;display:block;background:#fff"></iframe>`;
   return p.querySelector('iframe');
-}
-// The hub is on the same github.io origin: open it, unlock it with its own open(pw, remember=false)
-// (nothing is stored on the device), hide its header / menu / title and switch to one of its tabs.
-function rHubPage(v, tab) {
-  const f = rFrame(v, S.data.hub?.url || 'https://hadaad11.github.io/ncm-hub/'); f.style.background = 'transparent';
-  f.onload = () => {
-    try {
-      const w = f.contentWindow, d = w.document, st = d.createElement('style');
-      st.textContent = '#app>header,#side,.scrim,.hero{display:none!important}.layout{display:block!important}main{margin:0!important;max-width:none!important}';
-      d.head.appendChild(st);
-      const go = () => { const b = d.querySelector(`#tabs button[data-t="${tab}"]`); if (b) b.click(); };
-      if (d.querySelector('#lock:not(.hidden)') && S.data.hub?.pw) w.open(S.data.hub.pw, false).then(go); else setTimeout(go, 50);
-      const th = document.documentElement.dataset.theme; if (th) d.documentElement.dataset.theme = th;
-    } catch (e) { console.warn(e); }
-  };
 }
 
 /* ---------- monitor: the same glowing network page as the NCM Hub, fed with the snapshot ---------- */
@@ -459,7 +462,7 @@ function rMonitor(v) {
 /* ------------------------------------------------------------------ admin: users */
 const PERMS = [['prod', 'Production (dashboard, deliveries, customers, returned, trucks)|الإنتاج (الرئيسية، الرحلات، العملاء، المرتجع، الخلاطات)'],
   ['mat', 'Materials (consumption, target vs actual, formula control)|المواد (الاستهلاك، المستهدف والفعلي، مراجعة الخلطات)'], ['mix', 'Mix Designs|تصميمات الخلطات'],
-  ['cons', 'Consumption (Mix Theory vs Dry)|الاستهلاك (النظري والفعلي)'], ['cement', 'Cement|الأسمنت'], ['manpower', 'Manpower|المانباور'], ['maint', 'Maintenance|الصيانة'], ['monitor', 'Monitor|المونيتور'], ['hub', 'NCM Hub pages (plant quantity, pour tracker, ice; and the hub cement, maintenance, manpower pages)|صفحات NCM-HUB (كميات المحطات، الصبات، التلج؛ وصفحات الهب للأسمنت والصيانة والمانباور)']];
+  ['cons', 'Consumption (Mix Theory vs Dry)|الاستهلاك (النظري والفعلي)'], ['cement', 'Cement|الأسمنت'], ['manpower', 'Manpower|المانباور'], ['maint', 'Maintenance|الصيانة'], ['monitor', 'Monitor|المونيتور'], ['hub', 'Pour Tracker & Ice Calculate|متابعة الصبات وحساب التلج']];
 const GH = {token: '', sha: '', users: null};
 async function ghToken() {
   if (GH.token) return GH.token;
@@ -495,23 +498,6 @@ function rSettings(v) {
     ${cfg.map(p => `<tr><td><b>${esc(p.label)}</b></td><td>${esc(p.host) || '—'}</td><td>${esc(p.port)}</td><td><small>${esc(p.path)}</small></td>
       <td><span class="pill ${p.up ? 'ok' : 'off'}">${p.up ? L('Answering|شغالة') : L('Not reachable|مش متاحة')}</span></td></tr>`).join('') || `<tr><td colspan="5" class="empty">${L('Shown after the next data update (5 min)|بيظهر بعد التحديث الجاي (5 دقايق)')}</td></tr>`}</tbody></table></div>
     <p class="note">${L('To add a plant or change an IP, use Settings in the NCM PLANTS program on the office network; the site follows it within 5 minutes. It is not editable from the internet on purpose: these connections reach the plant databases.|لإضافة محطة أو تغيير IP استخدم الإعدادات في برنامج NCM PLANTS على شبكة المكتب؛ الموقع بيتبعه خلال 5 دقايق. مقفولة من الإنترنت عن قصد لأنها بتوصل لقواعد بيانات المحطات.')}</p>`;
-
-  const hp = panel(v, '🔑 ' + L('NCM Hub password|كلمة سر NCM-HUB'));
-  hp.innerHTML += `<p class="note" style="margin-top:0">${L('Type the hub password once. It is sent encrypted to the server only, and users with the NCM Hub permission get the hub opened without typing it.|اكتب كلمة سر الهب مرة واحدة. بتتبعت متشفّرة للسيرفر بس، واللي معاهم صلاحية NCM-HUB الهب بيفتح لهم من غير ما يكتبوها.')}
-    ${S.data.hub?.pw ? ' ✅ ' + L('Already set.|متسجلة.') : ''}</p>
-    <div class="tbar" style="margin:0"><input type="password" id="hP" autocomplete="off" placeholder="${L('Hub password|كلمة سر الهب')}" style="flex:1"><button class="btn primary" id="hS">${L('Save|حفظ')}</button></div><div class="err" id="hE"></div>`;
-  $('hS').onclick = async () => {
-    const pw = $('hP').value; $('hE').textContent = '';
-    if (!pw) return;
-    try {
-      const pub = await crypto.subtle.importKey('spki', ub64(S.meta.pub.replace(/-----[^-]+-----|\s/g, '')), {name: 'RSA-OAEP', hash: 'SHA-256'}, false, ['encrypt']);
-      const box = b64(await crypto.subtle.encrypt({name: 'RSA-OAEP'}, pub, enc.encode(JSON.stringify({pw}))));
-      let sha; try { sha = (await gh('/contents/hub_secret.json?ref=main')).sha; } catch (e) { if (!/404/.test(e.message)) throw e; }
-      await gh('/contents/hub_secret.json', {method: 'PUT', body: JSON.stringify({message: 'settings: hub password (encrypted for the server)', branch: 'main', ...(sha ? {sha} : {}),
-        content: b64(enc.encode(JSON.stringify({box}, null, 1)))})});
-      $('hP').value = ''; toast(L('Saved ✓ — the Hub tab opens by itself within 5 minutes|اتحفظ ✓ — تابة الهب هتفتح لوحدها خلال 5 دقايق'));
-    } catch (e) { $('hE').textContent = e.message; }
-  };
 
   const shown = SCREENS.filter(s => !s.admin);
   const sp = panel(v, '👁️ ' + L('Visible screens|الشاشات الظاهرة'));
