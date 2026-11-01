@@ -157,11 +157,15 @@ const SCREENS = [
   {id: 'formul', sec: 'mat', ic: 'flask', t: 'Formula Control|مراجعة الخلطات', sub: 'Theory vs real per formula|النظري مقابل الفعلي لكل خلطة', r: () => rMat('formul')},
   {id: 'mix', sec: 'mix', ic: 'doc', t: 'Mix Designs|تصميمات الخلطات', sub: 'kg/m³ of every recipe|كيلو/م³ لكل خلطة', r: rMix},
   {id: 'cons', sec: 'cons', ic: 'list', t: 'Consumption|الاستهلاك', sub: 'Mix Theory vs Dry Real|النظري مقابل الفعلي', r: rCons},
-  {id: 'cement', sec: 'cement', ic: 'silo', t: 'Cement|الأسمنت', sub: 'Cement sheets|شيتات الأسمنت', r: () => rSheet('cement')},
-  {id: 'manpower', sec: 'manpower', ic: 'users', t: 'Manpower|المانباور', sub: 'Staff sheets|شيتات العمالة', r: () => rSheet('manpower')},
-  {id: 'maint', sec: 'maint', ic: 'wrench', t: 'Maintenance|الصيانة', sub: 'Maintenance sheets|شيتات الصيانة', r: () => rSheet('maint')},
+  // with the NCM Hub permission these show the hub's own pages (aging, grease…), otherwise the sheets as tables
+  {id: 'cement', sec: 'cement', ic: 'silo', t: 'Cement|الأسمنت', sub: 'Cement tracking|متابعة الأسمنت', r: v => S.data.hub?.pw ? rHubPage(v, 'cement') : rSheet('cement')},
+  {id: 'manpower', sec: 'manpower', ic: 'users', t: 'Manpower|المانباور', sub: 'Staff and shifts|العمالة والورديات', r: v => S.data.hub?.pw ? rHubPage(v, 'manpower') : rSheet('manpower')},
+  {id: 'maint', sec: 'maint', ic: 'wrench', t: 'Maintenance|الصيانة', sub: 'Maintenance and grease|الصيانة والشحم', r: v => S.data.hub?.pw ? rHubPage(v, 'maintenance') : rSheet('maint')},
   {id: 'monitor', sec: 'monitor', ic: 'pulse', t: 'Monitor|المونيتور', sub: 'Server and network|حالة السيرفر والشبكة', r: rMonitor},
-  {id: 'hub', sec: 'hub', ic: 'grid', t: 'NCM Hub|NCM-HUB', sub: 'The NCM Hub, inside this site|NCM-HUB جوه الموقع ده', r: rHub},
+  // the NCM Hub pages, each as its own tab (permission "NCM Hub")
+  {id: 'hq', sec: 'hub', ic: 'factory', t: 'Plant Quantity|كميات المحطات', sub: 'Production by plant (NCM Hub)|الإنتاج لكل محطة (NCM-HUB)', r: v => rHubPage(v, 'plants')},
+  {id: 'pour', sec: 'hub', ic: 'truck', t: 'Pour Tracker|متابعة الصبات', sub: 'Pours and requests|الصبات والطلبات', r: v => rFrame(v, 'https://hadaad11.github.io/pourtracker-/')},
+  {id: 'ice', sec: 'hub', ic: 'cube', t: 'Ice Calculate|حساب التلج', sub: 'Ice for the mix temperature|التلج لدرجة حرارة الخلطة', r: v => rFrame(v, 'https://elkady591.github.io/Ice-Calculator/')},
   {id: 'users', admin: true, ic: 'shield', t: 'Admin · Users|الأدمن · المستخدمين', sub: 'Add users, passwords and who sees what|إضافة المستخدمين وكلمات السر ومين يشوف إيه', r: rUsers},
 ];
 const hidden = s => (S.settings?.hidden || []).includes(s.id);     // switched off in Admin > Settings
@@ -414,16 +418,26 @@ function rSheet(sec) {
   table(v, cols, data, {file: sec + '-' + t});
 }
 
-/* ---------- NCM Hub: the whole hub page inside the site (same github.io origin, it keeps its own password) ---------- */
-function rHub(v) {
-  const url = S.data.hub?.url || 'https://hadaad11.github.io/ncm-hub/';
+/* ---------- NCM Hub pages, one per tab ---------- */
+function rFrame(v, url) {                            // a whole page in the content area
   const p = panel(v); p.style.padding = '0'; p.style.overflow = 'hidden';
-  const pw = S.data.hub?.pw;
-  p.innerHTML = `<div class="tbar" style="margin:0;padding:10px 14px"><span class="note">${pw ? L('Opened for you — no hub password needed.|اتفتح لك — من غير كلمة سر الهب.') : L('The hub asks for its own password the first time on this device.|الهب بيطلب كلمة السر بتاعته أول مرة على الجهاز ده.')}</span><span class="grow"></span>
-    ${pw ? '' : `<a class="btn sm" href="${esc(url)}" target="_blank" rel="noopener">${L('Open in a new tab ↗|افتحه في تاب جديدة ↗')}</a>`}</div>
-    <iframe src="${esc(url)}" title="NCM Hub" style="width:100%;height:calc(100vh - 210px);min-height:600px;border:0;display:block"></iframe>`;
-  // same github.io origin: unlock the hub with its own open(pw, remember=false), nothing is stored on the device
-  if (pw) p.querySelector('iframe').onload = e => { try { const w = e.target.contentWindow; if (w.document.querySelector('#lock:not(.hidden)')) w.open(pw, false); } catch (x) {} };
+  p.innerHTML = `<iframe src="${esc(url)}" title="${esc(L(SCREENS.find(s => s.id === cur).t))}" style="width:100%;height:calc(100vh - 170px);min-height:600px;border:0;display:block;background:#fff"></iframe>`;
+  return p.querySelector('iframe');
+}
+// The hub is on the same github.io origin: open it, unlock it with its own open(pw, remember=false)
+// (nothing is stored on the device), hide its header / menu / title and switch to one of its tabs.
+function rHubPage(v, tab) {
+  const f = rFrame(v, S.data.hub?.url || 'https://hadaad11.github.io/ncm-hub/'); f.style.background = 'transparent';
+  f.onload = () => {
+    try {
+      const w = f.contentWindow, d = w.document, st = d.createElement('style');
+      st.textContent = '#app>header,#side,.scrim,.hero{display:none!important}.layout{display:block!important}main{margin:0!important;max-width:none!important}';
+      d.head.appendChild(st);
+      const go = () => { const b = d.querySelector(`#tabs button[data-t="${tab}"]`); if (b) b.click(); };
+      if (d.querySelector('#lock:not(.hidden)') && S.data.hub?.pw) w.open(S.data.hub.pw, false).then(go); else setTimeout(go, 50);
+      const th = document.documentElement.dataset.theme; if (th) d.documentElement.dataset.theme = th;
+    } catch (e) { console.warn(e); }
+  };
 }
 
 /* ---------- monitor: the same glowing network page as the NCM Hub, fed with the snapshot ---------- */
@@ -445,7 +459,7 @@ function rMonitor(v) {
 /* ------------------------------------------------------------------ admin: users */
 const PERMS = [['prod', 'Production (dashboard, deliveries, customers, returned, trucks)|الإنتاج (الرئيسية، الرحلات، العملاء، المرتجع، الخلاطات)'],
   ['mat', 'Materials (consumption, target vs actual, formula control)|المواد (الاستهلاك، المستهدف والفعلي، مراجعة الخلطات)'], ['mix', 'Mix Designs|تصميمات الخلطات'],
-  ['cons', 'Consumption (Mix Theory vs Dry)|الاستهلاك (النظري والفعلي)'], ['cement', 'Cement|الأسمنت'], ['manpower', 'Manpower|المانباور'], ['maint', 'Maintenance|الصيانة'], ['monitor', 'Monitor|المونيتور'], ['hub', 'NCM Hub|NCM-HUB']];
+  ['cons', 'Consumption (Mix Theory vs Dry)|الاستهلاك (النظري والفعلي)'], ['cement', 'Cement|الأسمنت'], ['manpower', 'Manpower|المانباور'], ['maint', 'Maintenance|الصيانة'], ['monitor', 'Monitor|المونيتور'], ['hub', 'NCM Hub pages (plant quantity, pour tracker, ice; and the hub cement, maintenance, manpower pages)|صفحات NCM-HUB (كميات المحطات، الصبات، التلج؛ وصفحات الهب للأسمنت والصيانة والمانباور)']];
 const GH = {token: '', sha: '', users: null};
 async function ghToken() {
   if (GH.token) return GH.token;
