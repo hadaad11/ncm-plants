@@ -4,6 +4,10 @@
   "del",
   "cust",
   "ret",
-  "tm"
+  "tm",
+  "mat",
+  "hedef",
+  "formul",
+  "mix"
  ]
 }
