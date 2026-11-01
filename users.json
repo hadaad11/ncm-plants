@@ -13,6 +13,31 @@
    "admin": true,
    "sections": [],
    "plants": []
+  },
+  {
+   "uid": "2b176ca2ab5b41895b1d96aff9ce668e04ce79f584997ad8991f900502574975",
+   "salt": "W23UDZzk+Y94/4jZN36gmA==",
+   "iter": 200000,
+   "pw_box": {
+    "iv": "6S0Sj7lPttY9bvz/",
+    "ct": "GhcOalju+vZ34M1RvzY64O5zX8TdWOAge4dcuUURGn+yvN4OAiruK9QTCvp0looC"
+   },
+   "srv_box": "NLSbAGms0f2NA4tk4rbShhaAQllqE5xRiNzooW3o2tHuDTzmM/FO9teHX91C/e7WvhdwIWCqW/AeJDYCA/APiqa/GCGzFhldE36aIuN8XlZSSJvejrQB7z8+digotLGfoT46r7j/lsmvzWXQVX3xA58LtWTJeZMH4hqQVP/8+/t10qebMkBNx94v57w8u32QVIjfVCUCAAlOj9NyrzbwV1WHbuSzf/bNrdEqkjEzuwXooZCvxi41HhJCkPUm9fdFuWi5OjBS1RY2eMlOIG3/ETbFh/Lwgw8tVOW/VoNGeaL6OVKWowP8K12PbrwY0Rm6/mnvy279YY4MR6tDazLIVA==",
+   "admin": false,
+   "sections": [
+    "cons",
+    "cement",
+    "manpower",
+    "maint",
+    "hub"
+   ],
+   "plants": [
+    "L1",
+    "L2",
+    "V3",
+    "V4",
+    "V5"
+   ]
   }
  ]
 }
