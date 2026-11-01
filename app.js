@@ -422,7 +422,7 @@ function rSheet(sec) {
   const t = sheetTab[sec] = names.includes(sheetTab[sec]) ? sheetTab[sec] : names[0];
   const p = panel(v);
   p.innerHTML = `<div class="tbar" style="margin:0"><div class="tabs" style="margin:0">${names.map(n => `<button data-k="${esc(n)}" class="${n === t ? 'on' : ''}">${esc(n)}</button>`).join('')}</div><span class="grow"></span>
-    <a class="btn sm" target="_blank" rel="noopener" href="${esc(d._edit)}">${L('Open the sheet ↗|افتح الشيت ↗')}</a></div>`;
+    <a class="btn sm" target="_blank" rel="noopener" href="${esc(t.startsWith('Grease') && d._edit_grease ? d._edit_grease : d._edit)}">${L('Open the sheet ↗|افتح الشيت ↗')}</a></div>`;
   p.onclick = e => { if (e.target.dataset.k) { sheetTab[sec] = e.target.dataset.k; show(cur, true); } };
   const raw = (d[t] || []).filter(r => r.some(c => String(c).trim()));
   if (!raw.length) { panel(v).innerHTML = `<div class="empty">${L('This tab is empty|التاب ده فاضي')}</div>`; return; }
