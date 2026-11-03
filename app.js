@@ -415,15 +415,78 @@ function rCons(v) {
     {k: 'Pct', l: 'Diff %|الفرق %', num: 1, f: pct}], g, {sort: consView === 'day' ? 'Date' : 'MixTheory', desc: consView !== 'day', file: 'consumption-' + consView});
 }
 
+/* ---------- grease dashboard (workbook "استهلاك الشحم.xlsm"; the same views the NCM Hub had) ---------- */
+let greaseView = 'summary';
+function rGrease(v, d) {
+  const tab = w => (Object.entries(d).find(([k]) => k.startsWith('Grease') && k.includes(w)) || [, []])[1];
+  const n = x => { const y = typeof x === 'number' ? x : parseFloat(String(x ?? '').replace(/,/g, '')); return isNaN(y) ? null : y; };
+  const plant = s => String(s || '').replace(/^محطة\s*/, LANG === 'ar' ? 'محطة ' : 'Plant ').replace(/^الإجمالي$/, L('Total|الإجمالي'));
+  const hdr = (rows, first) => rows.findIndex(r => String(r[0] || '').trim() === first);
+  const p = panel(v);
+  p.innerHTML = `<div class="tabs" style="margin:0">${[['summary', 'Summary|الملخص'], ['daily', 'Daily log|المتابعة اليومية'], ['opening', 'Opening balance|رصيد أول الشهر']]
+    .map(([k, t]) => `<button data-g="${k}" class="${k === greaseView ? 'on' : ''}">${L(t)}</button>`).join('')}<span class="grow"></span></div>`;
+  p.onclick = e => { if (e.target.dataset.g) { greaseView = e.target.dataset.g; show(cur, true); } };
+
+  if (greaseView === 'summary') {
+    const rows = tab('ملخص'), res = {};
+    // the results block (label in column E, value in F); the first match wins, the per-plant table below repeats some words
+    rows.forEach(r => { const k = String(r[4] || '').trim(); if (k && r[5] !== undefined && r[5] !== '' && !(k in res)) res[k] = r[5]; });
+    const get = w => { const k = Object.keys(res).find(x => x.startsWith(w)); return k ? res[k] : null; };
+    const kp = document.createElement('div'); kp.className = 'kpis'; v.appendChild(kp);
+    kp.innerHTML = [[L('Balance (kg)|الرصيد (كجم)'), fmt(n(get('إجمالي الرصيد'))), 'cube', 'var(--blue)'], [L('Balance (drums)|الرصيد (براميل)'), fmt(n(get('الرصيد الحالي')), 2), 'silo', 'var(--green)'],
+      [L('Used this month (kg)|استهلاك الشهر (كجم)'), fmt(n(get('استهلاك الشهر'))), 'pulse', '#2f8fd8'], [L('Days of cover|يكفي (يوم)'), fmt(n(get('مدة كفاية')), 0), 'refresh', '#7d7d7d']]
+      .map(([l, val, ic, c]) => `<div class="kpi glass"><div class="h"><span class="ic" style="background:${c}"><svg class="i"><use href="#i-${ic}"/></svg></span>${l}</div><div class="v">${val || '—'}</div></div>`).join('');
+    const hi = hdr(rows, 'المحطة');
+    const pr = hi >= 0 ? rows.slice(hi + 1).filter(r => /^محطة|^الإجمالي/.test(String(r[0] || ''))) : [];
+    const data = pr.map(r => ({p: plant(r[0]), open: n(r[1]), inn: n(r[2]), trucks: n(r[3]), use: n(r[4]), bal: n(r[5]), drum: (n(r[6]) || 0) * 100, days: n(r[8]), tpd: n(r[9]), kpd: n(r[10]), cover: n(r[11]), fc: n(r[12])}));
+    const plantsOnly = data.filter(r => !/Total|الإجمالي/.test(r.p));
+    if (plantsOnly.length) {
+      const pc = panel(v, L('Balance per plant (kg)|الرصيد لكل محطة (كجم)'));
+      chart(pc, 'cGr', {type: 'bar', data: {labels: plantsOnly.map(r => r.p), datasets: [{label: L('Balance kg|الرصيد كجم'), data: plantsOnly.map(r => r.bal), backgroundColor: plantsOnly.map(r => (r.bal ?? 0) < 20 ? '#e0533d' : '#1ba352'), borderRadius: 6},
+        {label: L('Used kg|المستهلك كجم'), data: plantsOnly.map(r => r.use), backgroundColor: '#0067a8', borderRadius: 6}]}, options: {scales: {x: {grid: {display: false}}, y: {grid: {color: 'rgba(125,125,125,.15)'}}}}}, 240);
+    }
+    table(v, [{k: 'p', l: 'Plant|المحطة'}, {k: 'open', l: 'Opening (kg)|أول المدة', num: 1}, {k: 'inn', l: 'Received (kg)|الوارد', num: 1}, {k: 'trucks', l: 'Trucks|العربيات', num: 1, d: 0},
+      {k: 'use', l: 'Used (kg)|المستهلك', num: 1}, {k: 'bal', l: 'Balance (kg)|الرصيد', num: 1, f: x => `<b style="color:${(x ?? 0) < 20 ? 'var(--danger)' : 'inherit'}">${fmt(x)}</b>`},
+      {k: 'drum', l: 'Drum left %|المتبقي من البرميل %', num: 1, d: 0}, {k: 'kpd', l: 'kg / day|كجم/يوم', num: 1}, {k: 'cover', l: 'Days of cover|يكفي (يوم)', num: 1, d: 0},
+      {k: 'fc', l: 'Forecast (kg)|المتوقع', num: 1}], data, {file: 'grease-summary', title: L('Per plant|لكل محطة')});
+  } else if (greaseView === 'daily') {
+    const rows = tab('يومية');
+    const alert = n((rows.find(r => String(r[0] || '').startsWith('حد تنبيه')) || [])[1]) || 20;
+    const hi = hdr(rows, 'التاريخ');
+    const items = rows.slice(hi + 1).filter(r => /^\d{4}-\d{2}-\d{2}/.test(String(r[0] || '')))
+      .map(r => ({d: String(r[0]).slice(0, 10), p: plant(r[1]), t: r[2] === '' || r[2] === undefined ? null : n(r[2]), inn: n(r[3]), open: n(r[4]), use: n(r[5]), close: n(r[6]), cover: n(r[7])}));
+    const missing = items.filter(x => x.t === null && x.d <= S.meta.to && items.some(y => y.d === x.d && y.t !== null));
+    if (missing.length) {
+      const by = {}; missing.forEach(x => (by[x.p] = by[x.p] || []).push(x.d.slice(8) + '/' + x.d.slice(5, 7)));
+      panel(v).innerHTML = `<div class="warnbox" style="margin:0">⚠️ ${L('No trucks entered (so no balance) for|مفيش عربيات متسجلة (فمفيش رصيد) في')}: ${Object.entries(by).map(([pl, ds]) => `<b>${esc(pl)}</b> (${ds.length}: ${ds.slice(0, 6).join(', ')}${ds.length > 6 ? '…' : ''})`).join(' · ')}.
+        ${L('Type the trucks, or 0 if the plant did not work.|اكتب عدد العربيات أو 0 لو المحطة ما اشتغلتش.')}</div>`;
+    }
+    table(v, [{k: 'd', l: 'Date|التاريخ', f: x => egDay(x)}, {k: 'p', l: 'Plant|المحطة'}, {k: 't', l: 'Trucks loaded|العربيات', num: 1, d: 0, sum: 1}, {k: 'inn', l: 'Received (kg)|الوارد', num: 1, sum: 1},
+      {k: 'open', l: 'Opening (kg)|أول اليوم', num: 1}, {k: 'use', l: 'Used (kg)|المستهلك', num: 1, sum: 1},
+      {k: 'close', l: 'Closing (kg)|آخر اليوم', num: 1, f: x => x === null ? '<span style="color:var(--ink3)">—</span>' : `<span style="${x < alert ? 'color:var(--danger);font-weight:700' : ''}">${fmt(x)}</span>`},
+      {k: 'cover', l: 'Days of cover|يكفي (يوم)', num: 1, d: 0}], items.filter(x => x.d <= S.meta.to).reverse(), {file: 'grease-daily', title: `${L('Balance alert below|تنبيه لو الرصيد أقل من')} ${fmt(alert, 0)} kg`});
+  } else {
+    const rows = tab('رصيد أول'), hi = hdr(rows, 'الشهر');
+    const head = hi >= 0 ? rows[hi] : [];
+    const data = hi >= 0 ? rows.slice(hi + 1).filter(r => r.slice(1).some(x => x !== '' && x !== undefined)).map(r => { const o = {m: String(r[0]).slice(0, 7)}; head.forEach((h, i) => i && (o['c' + i] = n(r[i]))); return o; }) : [];
+    table(v, [{k: 'm', l: 'Month|الشهر'}, ...head.slice(1).map((h, i) => ({k: 'c' + (i + 1), l: plant(h), num: 1}))], data, {file: 'grease-opening'});
+  }
+  panel(v).innerHTML = `<div class="tbar" style="margin:0"><span class="note">${L('From "استهلاك الشحم.xlsm" on Google Drive · updated every 5 minutes|من ملف "استهلاك الشحم.xlsm" على Google Drive · بيتحدث كل 5 دقايق')}</span><span class="grow"></span>
+    <a class="btn sm" target="_blank" rel="noopener" href="${esc(d._edit_grease || '#')}">${L('Open the grease file ↗|افتح ملف الشحم ↗')}</a></div>`;
+}
+
 /* ---------- Google Sheets screens ---------- */
 const sheetTab = {};
 function rSheet(sec) {
-  const v = $('view'), d = S.data[sec], names = Object.keys(d).filter(k => !k.startsWith('_'));
+  const v = $('view'), d = S.data[sec];
+  const names = Object.keys(d).filter(k => !k.startsWith('_') && !k.startsWith('Grease'));
+  if (Object.keys(d).some(k => k.startsWith('Grease'))) names.push('🛢️ Grease');       // one tab with the grease dashboard
   const t = sheetTab[sec] = names.includes(sheetTab[sec]) ? sheetTab[sec] : names[0];
   const p = panel(v);
   p.innerHTML = `<div class="tbar" style="margin:0"><div class="tabs" style="margin:0">${names.map(n => `<button data-k="${esc(n)}" class="${n === t ? 'on' : ''}">${esc(n)}</button>`).join('')}</div><span class="grow"></span>
     <a class="btn sm" target="_blank" rel="noopener" href="${esc(t.startsWith('Grease') && d._edit_grease ? d._edit_grease : d._edit)}">${L('Open the sheet ↗|افتح الشيت ↗')}</a></div>`;
   p.onclick = e => { if (e.target.dataset.k) { sheetTab[sec] = e.target.dataset.k; show(cur, true); } };
+  if (t === '🛢️ Grease') { p.querySelector('a.btn').remove(); return rGrease(v, d); }
   const raw = (d[t] || []).filter(r => r.some(c => String(c).trim()));
   if (!raw.length) { panel(v).innerHTML = `<div class="empty">${L('This tab is empty|التاب ده فاضي')}</div>`; return; }
   const hi = raw.findIndex(r => r.filter(c => String(c).trim()).length >= Math.min(3, Math.max(...raw.map(x => x.filter(c => String(c).trim()).length))));
