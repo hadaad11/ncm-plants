@@ -471,7 +471,7 @@ function rGrease(v, d) {
     const data = hi >= 0 ? rows.slice(hi + 1).filter(r => r.slice(1).some(x => x !== '' && x !== undefined)).map(r => { const o = {m: String(r[0]).slice(0, 7)}; head.forEach((h, i) => i && (o['c' + i] = n(r[i]))); return o; }) : [];
     table(v, [{k: 'm', l: 'Month|الشهر'}, ...head.slice(1).map((h, i) => ({k: 'c' + (i + 1), l: plant(h), num: 1}))], data, {file: 'grease-opening'});
   }
-  panel(v).innerHTML = `<div class="tbar" style="margin:0"><span class="note">${L('From "استهلاك الشحم.xlsm" on Google Drive · updated every 5 minutes|من ملف "استهلاك الشحم.xlsm" على Google Drive · بيتحدث كل 5 دقايق')}</span><span class="grow"></span>
+  panel(v).innerHTML = `<div class="tbar" style="margin:0"><span class="note">${L('From the "استهلاك الشحم" Google Sheet · updated every 5 minutes|من شيت "استهلاك الشحم" · بيتحدث كل 5 دقايق')}</span><span class="grow"></span>
     <a class="btn sm" target="_blank" rel="noopener" href="${esc(d._edit_grease || '#')}">${L('Open the grease file ↗|افتح ملف الشحم ↗')}</a></div>`;
 }
 
