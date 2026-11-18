@@ -484,7 +484,12 @@ function rSheet(sec) {
   const t = sheetTab[sec] = names.includes(sheetTab[sec]) ? sheetTab[sec] : names[0];
   const p = panel(v);
   p.innerHTML = `<div class="tbar" style="margin:0"><div class="tabs" style="margin:0">${names.map(n => `<button data-k="${esc(n)}" class="${n === t ? 'on' : ''}">${esc(n)}</button>`).join('')}</div><span class="grow"></span>
-    <a class="btn sm" target="_blank" rel="noopener" href="${esc(t.startsWith('Grease') && d._edit_grease ? d._edit_grease : d._edit)}">${L('Open the sheet ↗|افتح الشيت ↗')}</a></div>`;
+    ${sec === 'manpower' && S.ring.admin ? `<label class="btn sm primary" title="${esc(L('HR employee list (.xlsx: Code, Name, Job Title, Department, Hiring Date). It becomes the Full List and the Summary is counted again; Workers and Exclusion stay from the Google Sheet.|كشف الموظفين من HR (ملف xlsx فيه Code و Name و Job Title و Department و Hiring Date). بيبقى الـ Full List والـ Summary يتحسب منه تاني، والـ Workers والـ Exclusion بيفضلوا من شيت جوجل.'))}">⬆ ${L('Upload sheet|ارفع الشيت')}<input type="file" accept=".xlsx" hidden onchange="mpUpload(this.files[0]);this.value=''"></label>` : ''}
+    <a class="btn sm" target="_blank" rel="noopener" href="${esc(t.startsWith('Grease') && d._edit_grease ? d._edit_grease : d._edit)}">${L('Open the sheet ↗|افتح الشيت ↗')}</a></div>
+    ${sec === 'manpower' ? `<div class="note" style="margin-top:8px">${d._upload
+      ? L('Source: uploaded file|المصدر: ملف مرفوع') + ` <b>${esc(d._upload.name)}</b> · ${esc(d._upload.by)} · ${esc(new Date(d._upload.at).toLocaleString(LANG === 'ar' ? 'ar-EG' : 'en-GB', {dateStyle: 'medium', timeStyle: 'short'}))}`
+        + (d._upload.added?.length ? ` · <b style="color:var(--ok,#1ba352)">+${d._upload.added.length}</b> ${L('new vs the Google Sheet|جداد عن شيت جوجل')}` : '')
+        + (d._upload.left?.length ? ` · <b style="color:var(--bad,#c0352b)">−${d._upload.left.length}</b> ${L('not in the file|مش موجودين في الملف')}` : '')      : L('Source: the Google Sheet|المصدر: شيت جوجل')}</div>` : ''}`;
   p.onclick = e => { if (e.target.dataset.k) { sheetTab[sec] = e.target.dataset.k; show(cur, true); } };
   if (t === '🛢️ Grease') { p.querySelector('a.btn').remove(); return rGrease(v, d); }
   const raw = (d[t] || []).filter(r => r.some(c => String(c).trim()));
@@ -497,6 +502,28 @@ function rSheet(sec) {
   const cols = used.map(i => ({k: 'c' + i, l: head[i] || '#' + (i + 1), num: isNum(i), f: isNum(i) ? x => esc(x) : null}));
   const data = raw.slice(hi + 1).map(r => { const o = {}; used.forEach(i => o['c' + i] = r[i] ?? ''); return o; });
   table(v, cols, data, {file: sec + '-' + t});
+}
+
+/* Manpower upload: the admin picks the .xlsx, it is encrypted here (AES key wrapped with the server's RSA
+   key from meta.json) and saved as inbox/manpower.json on main with the admin's GitHub key. Only the server
+   can open it; the next export (within 5 minutes) shows it to everyone allowed to see Manpower. */
+async function mpUpload(file) {
+  if (!file) return;
+  if (!/\.xlsx$/i.test(file.name)) return toast(L('Choose an Excel .xlsx file|اختار ملف Excel بامتداد xlsx'));
+  if (file.size > 8e6) return toast(L('The file is too big (8 MB max)|الملف كبير (أقصى حاجة 8 ميجا)'));
+  if (!await ghToken()) { toast(L('Connect the GitHub key once from Admin · Users first|اربط مفتاح GitHub مرة واحدة من الأدمن · المستخدمين الأول')); return show('users'); }
+  toast(L('Uploading…|بيرفع…'));
+  try {
+    const raw = crypto.getRandomValues(new Uint8Array(32));
+    const box = await sealBytes(await aesKey(raw), new Uint8Array(await file.arrayBuffer()));
+    const pub = await crypto.subtle.importKey('spki', ub64(S.meta.pub.replace(/-----[^-]+-----|\s/g, '')), {name: 'RSA-OAEP', hash: 'SHA-256'}, false, ['encrypt']);
+    const body = {v: 1, name: file.name, size: file.size, at: new Date().toISOString(), by: S.ring.name || S.uid,
+      key: b64(await crypto.subtle.encrypt({name: 'RSA-OAEP'}, pub, raw)), ...box};
+    let sha; try { sha = (await gh('/contents/inbox/manpower.json?ref=main')).sha; } catch (e) { if (!/404/.test(e.message)) throw e; }
+    await gh('/contents/inbox/manpower.json', {method: 'PUT', body: JSON.stringify({message: 'manpower: sheet uploaded', branch: 'main',
+      content: b64(enc.encode(JSON.stringify(body))), ...(sha ? {sha} : {})})});
+    toast(L('Uploaded ✓ The site shows it within 5 minutes|اترفع ✓ هيظهر في الموقع خلال 5 دقايق'));
+  } catch (e) { toast(L('Upload failed: |الرفع فشل: ') + e.message); }
 }
 
 /* ---------- outside pages (Pour Tracker, Ice Calculate) inside the content area ---------- */
