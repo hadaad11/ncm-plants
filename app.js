@@ -484,12 +484,13 @@ function rSheet(sec) {
   const t = sheetTab[sec] = names.includes(sheetTab[sec]) ? sheetTab[sec] : names[0];
   const p = panel(v);
   p.innerHTML = `<div class="tbar" style="margin:0"><div class="tabs" style="margin:0">${names.map(n => `<button data-k="${esc(n)}" class="${n === t ? 'on' : ''}">${esc(n)}</button>`).join('')}</div><span class="grow"></span>
-    ${sec === 'manpower' && S.ring.admin ? `<label class="btn sm primary" title="${esc(L('HR employee list (.xlsx: Code, Name, Job Title, Department, Hiring Date). It becomes the Full List and the Summary is counted again; Workers and Exclusion stay from the Google Sheet.|كشف الموظفين من HR (ملف xlsx فيه Code و Name و Job Title و Department و Hiring Date). بيبقى الـ Full List والـ Summary يتحسب منه تاني، والـ Workers والـ Exclusion بيفضلوا من شيت جوجل.'))}">⬆ ${L('Upload sheet|ارفع الشيت')}<input type="file" accept=".xlsx" hidden onchange="mpUpload(this.files[0]);this.value=''"></label>` : ''}
-    <a class="btn sm" target="_blank" rel="noopener" href="${esc(t.startsWith('Grease') && d._edit_grease ? d._edit_grease : d._edit)}">${L('Open the sheet ↗|افتح الشيت ↗')}</a></div>
+    ${sec === 'manpower' && S.ring.admin ? `<label class="btn sm primary" title="${esc(L('HR employee list (.xlsx: Code, Name, Job Title, Department, Hiring Date). It becomes the Full List, the Summary is counted again, and whoever is no longer in it moves to Exclusion.|كشف الموظفين من HR (ملف xlsx فيه Code و Name و Job Title و Department و Hiring Date). بيبقى الـ Full List، والـ Summary يتحسب منه، واللي مش موجود فيه بيتنقل للـ Exclusion.'))}">⬆ ${L('Upload sheet|ارفع الشيت')}<input type="file" accept=".xlsx" hidden onchange="mpUpload(this.files[0]);this.value=''"></label>` : ''}
+    ${(t.startsWith('Grease') && d._edit_grease) || d._edit ? `<a class="btn sm" target="_blank" rel="noopener" href="${esc(t.startsWith('Grease') && d._edit_grease ? d._edit_grease : d._edit)}">${L('Open the sheet ↗|افتح الشيت ↗')}</a>` : ''}</div>
     ${sec === 'manpower' ? `<div class="note" style="margin-top:8px">${d._upload
       ? L('Source: uploaded file|المصدر: ملف مرفوع') + ` <b>${esc(d._upload.name)}</b> · ${esc(d._upload.by)} · ${esc(new Date(d._upload.at).toLocaleString(LANG === 'ar' ? 'ar-EG' : 'en-GB', {dateStyle: 'medium', timeStyle: 'short'}))}`
-        + (d._upload.added?.length ? ` · <b style="color:var(--ok,#1ba352)">+${d._upload.added.length}</b> ${L('new vs the Google Sheet|جداد عن شيت جوجل')}` : '')
-        + (d._upload.left?.length ? ` · <b style="color:var(--bad,#c0352b)">−${d._upload.left.length}</b> ${L('not in the file|مش موجودين في الملف')}` : '')      : L('Source: the Google Sheet|المصدر: شيت جوجل')}</div>` : ''}`;
+        + (d._upload.added?.length ? ` · <b style="color:var(--ok,#1ba352)">+${d._upload.added.length}</b> ${L('new in this file|جداد في الملف ده')}` : '')
+        + (d._upload.left?.length ? ` · <b style="color:var(--bad,#c0352b)">−${d._upload.left.length}</b> ${L('left (moved to Exclusion)|سابوا (اتنقلوا للـ Exclusion)')}` : '')
+        + (t === 'Workers' && d._upload.workers_from ? ` · ${L('Workers (shifts) is the copy taken on|الـ Workers (الورديات) نسخة متاخدة يوم')} ${esc(d._upload.workers_from)}` : '')      : L('Source: the Google Sheet|المصدر: شيت جوجل')}</div>` : ''}`;
   p.onclick = e => { if (e.target.dataset.k) { sheetTab[sec] = e.target.dataset.k; show(cur, true); } };
   if (t === '🛢️ Grease') { p.querySelector('a.btn').remove(); return rGrease(v, d); }
   const raw = (d[t] || []).filter(r => r.some(c => String(c).trim()));
